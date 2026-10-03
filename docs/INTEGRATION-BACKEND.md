@@ -11,6 +11,7 @@ Lire le controller Spring et ses DTO avant de créer le service Angular : métho
 | Services professionnels | ServiceProfessionnelController | features/services |
 | Demandes | DemandeController | features/demandes |
 | Devis | DevisController | features/devis |
+| Photos et vidéos des demandes | MediaController | features/demandes |
 | Administration des comptes | AdminUtilisateurController | features/admin/utilisateurs |
 
 Ne pas déduire une URL du nom d'un dossier : prendre celle de l'annotation du controller. Les exemples ci-dessous sont des fichiers à créer, pas une fonctionnalité déjà implémentée.
@@ -52,6 +53,7 @@ export interface CreerDemande {
   adresse: string;
   dateSouhaitee: string; // YYYY-MM-DD
   urgente?: boolean;
+  visiteDemandee?: boolean;
   zoneId?: number;
 }
 ```
@@ -107,6 +109,12 @@ Ajouter dans `app.routes.ts`, avant la route de repli :
 Créer le composant exporté `ListeDemandes` avant d'ajouter cet import. `authGuard` vérifie uniquement la présence d'une session locale. Pour une page réservée à un rôle, ajouter une garde de rôle pour l'expérience utilisateur et masquer les actions incompatibles. Cela ne remplace jamais Spring Security : modifier `sessionStorage` ne doit pas donner accès aux données du serveur.
 
 ## 5. Formulaires et appels d'administration
+
+Le backend permet aussi de demander une visite avant devis (`visiteDemandee`). Lors de l'acceptation, le professionnel peut transmettre `fraisVisite` dans `AccepterDemandeRequest`. Lire les DTO à jour pour afficher ces informations et leurs contraintes.
+
+Pour les médias, envoyer un `FormData` à `POST /api/clients/{clientId}/demandes/{demandeId}/medias`, en ajoutant chaque fichier sous le nom `fichiers`. Ne pas définir manuellement `Content-Type` : le navigateur ajoute la frontière multipart. Le backend accepte JPG, PNG et MP4, dans la limite de cinq fichiers par demande et 20 Mo par fichier.
+
+Les fichiers sont protégés : pour afficher `/api/medias/{mediaId}/fichier`, utiliser `HttpClient.get(url, { responseType: 'blob' })`, puis une URL créée avec `URL.createObjectURL`. Révoquer cette URL quand elle n'est plus utilisée. Un simple `<img src="/api/medias/...">` n'envoie pas le Bearer de l'interceptor. Ne jamais placer un token dans l'URL.
 
 Employer les formulaires réactifs, reprendre les contraintes des DTO Java, afficher les erreurs près des champs et empêcher les doubles soumissions. La confirmation de mot de passe est un champ de formulaire uniquement. Ne jamais envoyer un rôle administrateur depuis l'inscription publique.
 
