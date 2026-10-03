@@ -1,59 +1,45 @@
-# SenProxiTerangaFrontend
+# Sen Proxi Teranga — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.1.
+Angular 22, composants standalone, Signals, formulaires réactifs, Tailwind CSS 4 et PWA Angular. Layout et palette adaptés de [TailAdmin Angular](https://github.com/TailAdmin/free-angular-tailwind-dashboard), sous licence MIT (LICENSE-TailAdmin.md). Les pages de démonstration et leurs dépendances graphiques ne sont pas importées.
 
-## Development server
+## Démarrage du projet
 
-To start a local development server, run:
+Exécuter `npm ci`, puis `npm start` et ouvrir http://localhost:4200. Le proxy `/api` transmet les requêtes à Spring Boot sur http://localhost:8080. Démarrer le backend séparément avec MySQL et ADMIN_PASSWORD si le compte initial est absent.
 
-```bash
-ng serve
-```
+## Architecture
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- `core/auth` : modèles, session, interceptor Bearer, refresh partagé entre requêtes concurrentes et garde de route.
+- `core/http` : messages d’erreur API.
+- `core/pwa` : installation, mises à jour, état hors ligne.
+- `shared/layouts` : layout d’authentification responsive adapté de TailAdmin.
+- `features/auth` : connexion et inscription client/professionnel.
+- `features/account` : espace connecté et gestion des sessions.
+- `features/legal` : conditions provisoires à compléter avant ouverture publique.
+- `src/environments/environment.ts` : URL de l’API. En production, exposer `/api` sur le même domaine avec un reverse proxy vers Spring Boot.
 
-## Code scaffolding
+Routes chargées à la demande : `/connexion`, `/inscription`, `/espace`, `/conditions`. Les pages s’exécutent côté navigateur pour isoler les sessions personnelles du rendu serveur. Les autorisations réelles restent contrôlées par Spring Security.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Connexion et inscription
 
-```bash
-ng generate component component-name
-```
+POST /api/auth/register et POST /api/auth/connexion. L’inscription ne propose pas le rôle administrateur. Le métier est obligatoire pour les professionnels. Validation de l’email, du téléphone sénégalais, du mot de passe, de sa confirmation et des CGU. Après création, retour à la connexion avec confirmation.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Les tokens sont mémorisés dans `sessionStorage` pour l’onglet courant, sans mot de passe. Ils restent accessibles au JavaScript : prévenir les injections XSS et utiliser HTTPS en production. Le Bearer est envoyé uniquement à l’API. Après un 401, une seule tentative de renouvellement puis de répétition de la requête. Un refresh refusé efface la session et ramène à la connexion. Une déconnexion en panne réseau efface la session locale mais ne garantit pas la révocation serveur.
 
-```bash
-ng generate --help
-```
+## PWA
 
-## Building
+Exécuter `npm run start:pwa` pour servir la version de production localement. Le service worker s’active en production, sous HTTPS ou localhost. Installation proposée sur les navigateurs compatibles ; sur iOS, Partager → Sur l’écran d’accueil. Icônes 192/512 et maskable incluses.
 
-To build the project run:
+Le cache conserve uniquement le shell et les assets, jamais les réponses API ou données personnelles. Les opérations d’authentification exigent une connexion internet. Voir les [instructions PWA Angular](https://angular.dev/ecosystem/service-workers/getting-started).
 
-```bash
-ng build
-```
+## Intégrer les autres fonctionnalités
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Consulter le [guide d’intégration du backend](docs/INTEGRATION-BACKEND.md) : organisation des dossiers, contrats DTO, service HTTP, routes, formulaires, rôles, déploiement et vérifications avec l’API réelle.
 
-## Running unit tests
+## Commandes de vérification
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+`npm run build` et `npm test -- --watch=false`. Les tests HTTP utilisent une API simulée et ne créent pas de comptes en base. Les [interceptors Angular](https://angular.dev/guide/http/interceptors) sont fonctionnels.
 
-```bash
-ng test
-```
 
-## Running end-to-end tests
+## Hôtes locaux
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Les hôtes localhost et 127.0.0.1 sont autorisés explicitement dans angular.json et dans le serveur Angular. Redémarrer npm start après une modification de cette configuration. En production, configurer APP_ALLOWED_HOSTS avec les domaines autorisés, séparés par des virgules. Ne pas utiliser une autorisation globale.

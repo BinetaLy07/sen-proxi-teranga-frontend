@@ -1,0 +1,58 @@
+<div class="auth-shell">
+  <section class="auth-content">
+    <header class="flex items-center justify-between gap-4">
+      <a routerLink="/connexion" class="brand" aria-label="Sen Proxi Teranga, accueil"
+        ><span class="brand-mark">S<span>•</span></span
+        ><span
+          >sen proxi<span class="block text-xs font-medium tracking-[.2em] text-gray-500"
+            >TERANGA</span
+          ></span
+        ></a
+      ><span class="hidden rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500 sm:inline-flex"
+        >Services de proximité</span
+      >
+    </header>
+    <main class="form-container"><router-outlet /></main>
+    <footer class="mt-8 flex flex-wrap justify-between gap-2 text-xs text-gray-500">
+      <span>© 2026 Sen Proxi Teranga</span><span>Fait pour vous, au Sénégal.</span>
+    </footer>
+  </section>
+  <aside class="auth-story" aria-label="Notre communauté">
+    <div class="story-grid" aria-hidden="true"></div>
+    <div class="relative z-10 max-w-lg">
+      <span class="story-badge"
+        ><span class="size-2 rounded-full bg-emerald-300"></span> La proximité fait la
+        différence</span
+      >
+      <h2 class="mt-9 text-4xl font-semibold leading-tight xl:text-5xl">
+        Les bons services.<br />Les bonnes personnes.<br /><span class="text-emerald-300"
+          >Tout près de vous.</span
+        >
+      </h2>
+      <p class="mt-6 max-w-sm text-base leading-relaxed text-white/70">
+        Un besoin à la maison ? Un savoir-faire à partager ? Retrouvez votre communauté sur Sen
+        Proxi Teranga.
+      </p>
+      <div class="community-art" aria-hidden="true">
+        <div class="art-orbit"></div>
+        <div class="art-house">⌂</div>
+        <div class="art-card art-card-one">
+          <span class="art-icon">✓</span
+          ><span>Un coup de main<br /><small>au bon moment</small></span>
+        </div>
+        <div class="art-card art-card-two">
+          <span class="art-icon amber">✦</span
+          ><span>Votre savoir-faire<br /><small>près de chez vous</small></span>
+        </div>
+      </div>
+      <div class="flex gap-4 border-t border-white/15 pt-6">
+        <span class="text-2xl">↗</span>
+        <p class="text-sm leading-relaxed text-white/70">
+          Une plateforme qui rapproche<br /><strong class="font-medium text-white"
+            >clients et professionnels locaux.</strong
+          >
+        </p>
+      </div>
+    </div>
+  </aside>
+</div>

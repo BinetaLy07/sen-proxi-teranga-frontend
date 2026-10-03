@@ -1,1 +1,182 @@
-/* You can add global styles to this file, and also import other style files */
+/* Auth layout and design tokens adapted from TailAdmin Angular (MIT). */
+@import 'tailwindcss';
+@theme {
+  --color-brand-500: #465fff;
+  --color-brand-600: #3641f5;
+  --color-brand-950: #161950;
+  --font-sans: 'Segoe UI', Arial, sans-serif;
+}
+@layer base {
+  body {
+    @apply m-0 bg-white text-gray-800 antialiased;
+  }
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  a {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid #465fff;
+    outline-offset: 3px;
+  }
+  label {
+    @apply mb-2 block text-sm font-medium text-gray-700;
+  }
+  input:not([type='checkbox']) {
+    @apply h-12 w-full rounded-lg border border-gray-300 bg-white px-4 text-base text-gray-800 shadow-sm outline-none transition;
+  }
+  input:focus {
+    border-color: #465fff;
+    box-shadow: 0 0 0 3px #465fff18;
+  }
+  input[aria-invalid='true'] {
+    @apply border-red-500;
+  }
+  input::placeholder {
+    @apply text-gray-400;
+  }
+}
+@layer components {
+  .auth-shell {
+    @apply grid min-h-dvh lg:grid-cols-2;
+  }
+  .auth-content {
+    @apply flex min-w-0 flex-col px-5 py-6 sm:px-10 sm:py-8 xl:px-16;
+  }
+  .brand {
+    @apply inline-flex items-center gap-3 text-lg font-semibold leading-tight tracking-tight text-gray-900;
+  }
+  .brand-mark {
+    @apply flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-2xl font-bold text-white;
+  }
+  .brand-mark span {
+    @apply text-emerald-300;
+  }
+  .form-container {
+    @apply mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10 sm:py-14;
+  }
+  .eyebrow {
+    @apply mb-3 text-[10px] font-semibold tracking-[.18em] text-brand-500 sm:text-xs;
+  }
+  .page-title {
+    @apply text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl;
+  }
+  .page-description {
+    @apply mt-3 text-sm leading-relaxed text-gray-500;
+  }
+  .primary-button {
+    @apply flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-wait disabled:opacity-60;
+  }
+  .secondary-button {
+    @apply rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium hover:bg-gray-50;
+  }
+  .text-link {
+    @apply font-medium text-brand-500 underline-offset-4 hover:underline;
+  }
+  .required,
+  .field-error {
+    @apply text-red-700;
+  }
+  .field-error {
+    @apply mt-1.5 text-xs leading-relaxed;
+  }
+  .password-field {
+    @apply relative;
+  }
+  .password-field input {
+    padding-inline-end: 5rem;
+  }
+  .password-field button {
+    @apply absolute top-0 h-12 px-3 text-xs font-medium text-gray-500;
+    inset-inline-end: 0;
+  }
+  .checkbox-label {
+    @apply flex items-start gap-3 text-sm font-normal leading-relaxed text-gray-500;
+  }
+  .checkbox-label input {
+    @apply mt-1 size-4 shrink-0 accent-brand-500;
+  }
+  .role-picker {
+    @apply my-6 grid grid-cols-2 gap-3;
+  }
+  .role-picker button {
+    @apply flex min-w-0 flex-col items-start gap-1 rounded-xl border border-gray-200 bg-white p-3 text-start text-gray-500 sm:p-4;
+  }
+  .role-picker button strong {
+    @apply text-xs font-semibold text-gray-800 sm:text-sm;
+  }
+  .role-picker button small {
+    @apply text-[11px];
+  }
+  .role-picker button.selected {
+    @apply border-brand-500 bg-indigo-50 text-brand-500;
+  }
+  .notice {
+    @apply mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900;
+  }
+  .notice.error {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+  .notice.success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+  }
+  .auth-story {
+    @apply relative hidden overflow-hidden bg-brand-950 p-12 text-white lg:flex lg:items-center lg:justify-center xl:p-20;
+  }
+  .story-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.12;
+    background-image:
+      linear-gradient(#9aa0ff 1px, transparent 1px),
+      linear-gradient(90deg, #9aa0ff 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, black, transparent 75%);
+  }
+  .story-badge {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/80;
+  }
+  .community-art {
+    @apply relative my-10 h-52;
+  }
+  .art-orbit {
+    @apply absolute start-16 top-0 size-52 rounded-full border border-white/15;
+  }
+  .art-house {
+    @apply absolute start-28 top-8 flex size-32 items-center justify-center rounded-3xl border border-white/15 bg-white/10 text-8xl text-emerald-300;
+    transform: rotate(-8deg);
+  }
+  .art-card {
+    @apply absolute flex items-center gap-3 rounded-xl bg-white p-4 text-xs font-semibold text-gray-900 shadow-xl;
+  }
+  .art-card small {
+    @apply font-normal text-gray-500;
+  }
+  .art-card-one {
+    inset-inline-start: 0;
+    top: 24px;
+    transform: rotate(-4deg);
+  }
+  .art-card-two {
+    inset-inline-end: 0;
+    bottom: 10px;
+    transform: rotate(4deg);
+  }
+  .art-icon {
+    @apply flex size-10 items-center justify-center rounded-lg bg-emerald-50 text-xl text-emerald-700;
+  }
+  .art-icon.amber {
+    @apply bg-amber-50 text-amber-700;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}

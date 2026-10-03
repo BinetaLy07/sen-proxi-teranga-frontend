@@ -1,0 +1,40 @@
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
+import { AuthService } from '../../../core/auth/auth.service';
+import { apiError } from '../../../core/http/api-error';
+@Component({ imports: [ReactiveFormsModule, RouterLink], templateUrl: './login.html' })
+export class Login {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly registered = inject(ActivatedRoute).snapshot.queryParamMap.get('inscription') === 'ok';
+  readonly form = inject(FormBuilder).nonNullable.group({
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    motDePasse: ['', Validators.required],
+  });
+  readonly busy = signal(false);
+  readonly error = signal('');
+  readonly visible = signal(false);
+  invalid(name: 'email' | 'motDePasse') {
+    const c = this.form.controls[name];
+    return c.touched && c.invalid;
+  }
+  submit() {
+    if (this.busy()) return;
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+    this.busy.set(true);
+    this.error.set('');
+    const { email, motDePasse } = this.form.getRawValue();
+    this.auth
+      .login(email.trim(), motDePasse)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/espace']);
+        },
+        error: (error) => this.error.set(apiError(error)),
+      });
+  }
+}

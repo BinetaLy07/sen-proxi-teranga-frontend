@@ -1,0 +1,66 @@
+<p class="eyebrow">BIENVENUE CHEZ VOUS</p>
+<h1 class="page-title">Connectez-vous.</h1>
+<p class="page-description">Retrouvez vos services et votre communauté.</p>
+@if (registered) {
+  <div class="notice success" role="status">
+    Votre compte est créé. Vous pouvez maintenant vous connecter.
+  </div>
+}
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+<form
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  class="mt-8 space-y-5"
+  [attr.aria-busy]="busy()"
+  novalidate
+>
+  <div>
+    <label for="email">Adresse email <span class="required">*</span></label
+    ><input
+      id="email"
+      type="email"
+      formControlName="email"
+      autocomplete="username"
+      placeholder="vous@exemple.com"
+      [attr.aria-invalid]="invalid('email')"
+      aria-describedby="email-error"
+    />
+    @if (invalid('email')) {
+      <p id="email-error" class="field-error">Saisissez une adresse email valide.</p>
+    }
+  </div>
+  <div>
+    <label for="password">Mot de passe <span class="required">*</span></label>
+    <div class="password-field">
+      <input
+        id="password"
+        [type]="visible() ? 'text' : 'password'"
+        formControlName="motDePasse"
+        autocomplete="current-password"
+        placeholder="Votre mot de passe"
+        [attr.aria-invalid]="invalid('motDePasse')"
+        aria-describedby="password-error"
+      /><button
+        type="button"
+        (click)="visible.set(!visible())"
+        [attr.aria-label]="visible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+      >
+        {{ visible() ? 'Masquer' : 'Voir' }}
+      </button>
+    </div>
+    @if (invalid('motDePasse')) {
+      <p id="password-error" class="field-error">Le mot de passe est obligatoire.</p>
+    }
+  </div>
+  <button class="primary-button w-full" type="submit" [disabled]="busy()">
+    {{ busy() ? 'Connexion en cours…' : 'Se connecter' }} <span aria-hidden="true">→</span>
+  </button>
+</form>
+<p class="mt-7 text-sm text-gray-500">
+  Vous nous rejoignez ? <a routerLink="/inscription" class="text-link">Créer un compte</a>
+</p>
+<div class="mt-9 border-t border-gray-200 pt-5 text-xs leading-relaxed text-gray-500">
+  Votre connexion est personnelle. Ne partagez jamais votre mot de passe.
+</div>

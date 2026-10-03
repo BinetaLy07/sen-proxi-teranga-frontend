@@ -1,6 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-
+import { PwaService } from './core/pwa/pwa.service';
 @Component({
   imports: [RouterOutlet],
   selector: 'app-root',
@@ -8,5 +8,5 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly title = signal('sen-proxi-teranga-frontend');
+  readonly pwa = inject(PwaService);
 }

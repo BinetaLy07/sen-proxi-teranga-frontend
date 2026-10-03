@@ -1,0 +1,51 @@
+<div class="min-h-screen bg-gray-50">
+  <header class="border-b border-gray-200 bg-white">
+    <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-5">
+      <span class="brand"
+        ><span class="brand-mark">S<span>•</span></span
+        >sen proxi teranga</span
+      ><button class="secondary-button" (click)="logout()">Se déconnecter</button>
+    </div>
+  </header>
+  <main class="mx-auto max-w-5xl px-6 py-12">
+    <p class="eyebrow">VOTRE ESPACE PERSONNEL</p>
+    <h1 class="page-title">Bienvenue dans le quartier.</h1>
+    <p class="page-description">
+      Votre compte
+      {{
+        auth.session()?.role === 'PROFESSIONNEL'
+          ? 'professionnel'
+          : auth.session()?.role === 'ADMINISTRATEUR'
+            ? 'administrateur'
+            : 'client'
+      }}
+      est connecté.
+    </p>
+    <section class="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
+      <h2 class="text-xl font-semibold">Vos sessions</h2>
+      <p class="mt-2 text-sm text-gray-500">Gardez le contrôle des connexions à votre compte.</p>
+      @if (error()) {
+        <div class="notice error" role="alert">{{ error() }}</div>
+      }
+      @if (loading()) {
+        <p class="py-8" role="status">Chargement des sessions…</p>
+      }
+      @for (session of sessions(); track session.id) {
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 py-5"
+        >
+          <div>
+            <p class="font-medium">{{ session.current ? 'Session actuelle' : 'Autre session' }}</p>
+            <p class="text-sm text-gray-500">
+              Expire le {{ session.expiresAt | date: 'dd/MM/yyyy à HH:mm' }}
+            </p>
+          </div>
+          <button class="secondary-button" (click)="revoke(session)">Révoquer</button>
+        </div>
+      }
+      <button class="mt-6 text-sm font-medium text-red-700" (click)="logout(true)">
+        Déconnecter toutes les sessions
+      </button>
+    </section>
+  </main>
+</div>
