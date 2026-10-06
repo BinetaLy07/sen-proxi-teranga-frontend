@@ -54,15 +54,17 @@ export const routes: Routes = [
         path: 'messages',
         title: 'Messages | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT', 'PROFESSIONNEL')],
-        data: { titre: 'Messages' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/messages/pages/messages/messages').then((m) => m.Messages),
       },
       {
         path: 'notifications',
         title: 'Notifications | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT', 'PROFESSIONNEL')],
-        data: { titre: 'Notifications' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/notifications/pages/notifications/notifications').then(
+            (m) => m.Notifications,
+          ),
       },
 
       // Client

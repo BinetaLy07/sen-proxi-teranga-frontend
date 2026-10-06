@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
@@ -35,6 +36,7 @@ const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
   imports: [
     DatePipe,
     ReactiveFormsModule,
+    RouterLink,
     PhotosDemande,
     DevisPro,
     RendezVousPro,
@@ -122,6 +124,10 @@ export class DemandesRecues {
   readonly actionError = signal('');
   readonly actionSuccess = signal('');
 
+  // Arrivée depuis une notification : /demandes-recues?demande=18 ouvre la demande 18
+  private readonly demandeDemandee =
+    Number(inject(ActivatedRoute).snapshot.queryParamMap.get('demande')) || null;
+
   constructor() {
     this.professionnelApi.monProfil(this.proId).subscribe({
       next: (p) => {
@@ -129,7 +135,7 @@ export class DemandesRecues {
         this.note.set({ moyenne: p.noteMoyenne, nombre: p.nombreAvis });
       },
     });
-    this.charger();
+    this.charger(this.demandeDemandee);
   }
 
   // ===== Chargement =====

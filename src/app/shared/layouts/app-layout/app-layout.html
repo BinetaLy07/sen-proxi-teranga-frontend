@@ -2,7 +2,8 @@
   <header class="border-b border-gray-200 bg-white">
     <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 pt-5">
       <a routerLink="/espace" class="brand" aria-label="Sen Proxi Teranga, mon espace"
-        ><span class="brand-mark">S<span>•</span></span>sen proxi teranga</a
+        ><span class="brand-mark">S<span>•</span></span
+        >sen proxi teranga</a
       >
       <div class="flex items-center gap-3">
         <span
@@ -21,8 +22,14 @@
           routerLinkActive="!border-brand-500 !text-brand-500"
           [routerLinkActiveOptions]="{ exact: true }"
           class="whitespace-nowrap border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-600 hover:text-gray-900"
-          >{{ lien.libelle }}</a
-        >
+          >{{ lien.libelle }}
+          @if (nombre(lien) > 0) {
+            <span
+              class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
+              >{{ nombre(lien) }}<span class="sr-only"> non lus</span></span
+            >
+          }
+        </a>
       }
     </nav>
   </header>

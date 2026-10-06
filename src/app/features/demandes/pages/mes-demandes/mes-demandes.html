@@ -74,6 +74,12 @@
               ({{ d.zoneNom }})
             }
           </p>
+          <a
+            [routerLink]="['/messages']"
+            [queryParams]="{ avec: d.professionnelId, nom: d.professionnelNom }"
+            class="text-link mt-2 inline-block text-sm"
+            >Écrire à {{ d.professionnelNom }} →</a
+          >
           <p class="mt-4 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
           <app-photos-demande [demandeId]="d.id" />
           <p class="mt-3 text-sm text-gray-600">

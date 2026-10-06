@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
@@ -73,8 +73,12 @@ export class MesDemandes {
   readonly actionError = signal('');
   readonly actionSuccess = signal('');
 
+  // Arrivée depuis une notification : /mes-demandes?demande=18 ouvre la demande 18
+  private readonly demandeDemandee =
+    Number(inject(ActivatedRoute).snapshot.queryParamMap.get('demande')) || null;
+
   constructor() {
-    this.charger();
+    this.charger(this.demandeDemandee);
   }
 
   // ===== Chargement =====
