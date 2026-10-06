@@ -84,8 +84,8 @@ export const routes: Routes = [
         path: 'mes-demandes',
         title: 'Mes demandes | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT')],
-        data: { titre: 'Mes demandes' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/demandes/pages/mes-demandes/mes-demandes').then((m) => m.MesDemandes),
       },
 
       // Professionnel

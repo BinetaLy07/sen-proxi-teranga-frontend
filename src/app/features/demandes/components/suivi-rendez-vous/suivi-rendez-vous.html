@@ -1,0 +1,117 @@
+@if (visible()) {
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <h3 class="text-xl font-semibold">Rendez-vous</h3>
+
+    @if (error()) {
+      <div class="notice error" role="alert">{{ error() }}</div>
+    }
+
+    @if (!rdv()) {
+      <p class="mt-3 text-gray-600">
+        Devis accepté : {{ demande().professionnelNom }} va vous proposer une date de rendez-vous.
+      </p>
+    } @else {
+      @let r = rdv()!;
+      @switch (r.statut) {
+        @case ('PROPOSE') {
+          <p class="mt-3 text-gray-700">
+            {{ r.professionnelNom }} propose de venir le
+            <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong>
+            ({{ r.adresse }}).
+          </p>
+          @if (!action()) {
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button type="button" class="primary-button" (click)="accepter()" [disabled]="busy()">
+                Accepter cette date
+              </button>
+              <button type="button" class="secondary-button" (click)="ouvrir('refus')">
+                Refuser et demander une autre date
+              </button>
+            </div>
+          }
+        }
+        @case ('REFUSE') {
+          <p class="mt-3 text-gray-700">
+            Vous avez refusé la date proposée (« {{ r.motif }} »). {{ r.professionnelNom }} va
+            proposer une autre date.
+          </p>
+        }
+        @case ('REPORTE') {
+          <p class="mt-3 text-gray-700">
+            Le rendez-vous a été reporté (« {{ r.motif }} »). Une nouvelle date va être proposée.
+          </p>
+        }
+        @case ('ACCEPTE') {
+          @switch (demande().statut) {
+            @case ('PLANIFIEE') {
+              <p class="mt-3 text-gray-700">
+                Rendez-vous confirmé le
+                <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong> ({{ r.adresse }}).
+              </p>
+              @if (!action()) {
+                <button
+                  type="button"
+                  class="mt-4 text-sm font-medium text-red-700"
+                  (click)="ouvrir('report')"
+                >
+                  Reporter le rendez-vous
+                </button>
+              }
+            }
+            @case ('EN_COURS') {
+              <p class="mt-3 text-gray-700">
+                Les travaux ont commencé le
+                {{ r.dateDebutTravaux | date: "dd/MM/yyyy 'à' HH:mm" }}.
+              </p>
+            }
+            @case ('TERMINEE') {
+              <div class="notice">
+                {{ r.professionnelNom }} a terminé les travaux le
+                {{ r.dateFinTravaux | date: "dd/MM/yyyy 'à' HH:mm" }}. Vérifiez, puis confirmez que
+                tout est bien fait.
+              </div>
+              <button
+                type="button"
+                class="primary-button mt-4"
+                (click)="confirmerFin()"
+                [disabled]="busy()"
+              >
+                Confirmer que les travaux sont bien faits
+              </button>
+            }
+            @default {
+              <p class="mt-3 text-gray-700">
+                Travaux réalisés le {{ r.dateFinTravaux | date: 'dd/MM/yyyy' }}.
+              </p>
+            }
+          }
+        }
+      }
+    }
+
+    @if (action(); as a) {
+      <div class="mt-5">
+        <label for="motif-rdv">
+          {{ a === 'refus' ? 'Pourquoi refusez-vous cette date ?' : 'Pourquoi reporter ?' }}
+          <span class="required">*</span>
+        </label>
+        <textarea
+          id="motif-rdv"
+          [formControl]="motif"
+          rows="2"
+          class="w-full rounded-lg border border-gray-300 p-3 text-base"
+          placeholder="Ex. : je ne suis pas disponible ce jour-là"
+        ></textarea>
+        @if (motif.touched && motif.invalid) {
+          <p class="field-error">Le motif est obligatoire (500 caractères maximum).</p>
+        }
+        <div class="mt-3 flex flex-wrap gap-3">
+          <button type="button" class="primary-button" (click)="validerMotif()" [disabled]="busy()">
+            Envoyer
+          </button>
+          <button type="button" class="secondary-button" (click)="action.set(null)">Retour</button>
+        </div>
+      </div>
+    }
+  </section>
+}

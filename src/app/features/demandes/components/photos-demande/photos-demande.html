@@ -1,0 +1,15 @@
+@if (fichiers().length > 0) {
+  <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    @for (f of fichiers(); track f.media.id) {
+      @if (f.media.type === 'VIDEO') {
+        <video [src]="f.url" controls class="aspect-[4/3] w-full rounded-xl bg-black"></video>
+      } @else {
+        <img
+          [src]="f.url"
+          [alt]="f.media.nomOriginal"
+          class="aspect-[4/3] w-full rounded-xl bg-gray-100 object-cover"
+        />
+      }
+    }
+  </div>
+}

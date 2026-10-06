@@ -1,0 +1,71 @@
+@if (visible() && charge()) {
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <h3 class="text-xl font-semibold">Paiement</h3>
+
+    @if (error()) {
+      <div class="notice error" role="alert">{{ error() }}</div>
+    }
+
+    @if (paiement(); as p) {
+      @switch (p.statut) {
+        @case ('DECLARE') {
+          <div class="notice">
+            Vous avez déclaré un paiement de <strong>{{ montantTexte(p.montant) }}</strong> par
+            {{ libelleMode(p.modePaiement) }} le {{ p.dateDeclaration | date: 'dd/MM/yyyy' }}.
+            {{ p.professionnelNom }} doit le confirmer avant le
+            {{ p.dateLimiteConfirmation | date: "dd/MM/yyyy 'à' HH:mm" }} ; sinon, il sera confirmé
+            automatiquement.
+          </div>
+        }
+        @case ('CONFIRME') {
+          <div class="notice success">
+            Paiement de {{ montantTexte(p.montant) }} confirmé ({{ libelleMode(p.modePaiement) }}).
+            La demande est clôturée.
+          </div>
+        }
+        @case ('CONTESTE') {
+          <div class="notice error">
+            {{ p.professionnelNom }} dit ne pas avoir reçu le paiement : « {{ p.motifContestation }}
+            ». L'administrateur va examiner le dossier.
+          </div>
+        }
+      }
+    } @else if (demande().statut === 'CONFIRMEE') {
+      <p class="mt-2 text-gray-600">
+        Payez directement {{ demande().professionnelNom }}, puis indiquez ici comment vous avez
+        payé.
+        @if (montant() !== null) {
+          Montant du devis : <strong>{{ montantTexte(montant()) }}</strong
+          >.
+        }
+      </p>
+      <form [formGroup]="form" (ngSubmit)="declarer()" class="mt-4 space-y-4" novalidate>
+        <fieldset>
+          <legend class="mb-2 text-sm font-medium text-gray-700">Moyen de paiement</legend>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            @for (m of modes; track m.valeur) {
+              <label
+                class="flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 p-3"
+              >
+                <input type="radio" formControlName="modePaiement" [value]="m.valeur" />
+                {{ m.libelle }}
+              </label>
+            }
+          </div>
+        </fieldset>
+        @if (form.controls.modePaiement.value !== 'ESPECES') {
+          <div>
+            <label for="reference"
+              >Numéro de transaction
+              <span class="font-normal text-gray-500">(facultatif)</span></label
+            >
+            <input id="reference" formControlName="reference" placeholder="Ex. : WV-123456" />
+          </div>
+        }
+        <button class="primary-button" type="submit" [disabled]="busy()">
+          {{ busy() ? 'Envoi…' : "J'ai payé" }}
+        </button>
+      </form>
+    }
+  </section>
+}

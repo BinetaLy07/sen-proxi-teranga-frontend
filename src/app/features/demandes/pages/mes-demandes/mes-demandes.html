@@ -1,0 +1,297 @@
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <p class="eyebrow">MES DEMANDES</p>
+    <h1 class="page-title">Suivez chaque demande</h1>
+  </div>
+  <a routerLink="/recherche" class="primary-button">+ Nouvelle demande</a>
+</div>
+
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+@if (loading() && demandes().length === 0) {
+  <p class="py-10" role="status">Chargement de vos demandes…</p>
+}
+@if (!loading() && !error() && demandes().length === 0) {
+  <div class="mt-8 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
+    <p class="font-medium text-gray-900">Vous n'avez pas encore de demande.</p>
+    <a routerLink="/recherche" class="text-link mt-2 inline-block">Trouver un professionnel →</a>
+  </div>
+}
+
+@if (demandes().length > 0) {
+  <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
+    <!-- ===== À gauche : la liste ===== -->
+    <nav class="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0" aria-label="Mes demandes">
+      @for (d of demandes(); track d.id) {
+        <button
+          type="button"
+          (click)="choisir(d.id)"
+          [attr.aria-current]="d.id === selectionId() ? 'true' : null"
+          class="rounded-xl border bg-white p-4 text-left"
+          [class]="d.id === selectionId() ? 'border-2 border-brand-500' : 'border-gray-200'"
+        >
+          <span class="flex items-start justify-between gap-2">
+            <strong class="text-gray-900">{{ d.serviceTitre }}</strong>
+            <span
+              class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+              [class]="etiquettes[d.statut].classes"
+              >{{ etiquettes[d.statut].libelle }}</span
+            >
+          </span>
+          <span class="mt-1 block text-sm text-gray-600">{{ d.professionnelNom }}</span>
+          <span class="mt-1 block text-xs text-gray-500">
+            Envoyée le {{ d.dateCreation | date: 'dd/MM/yyyy' }}
+            @if (d.urgente) {
+              · <strong class="text-amber-700">urgente</strong>
+            }
+          </span>
+        </button>
+      }
+    </nav>
+
+    <!-- ===== À droite : le détail ===== -->
+    @if (selection(); as d) {
+      <div class="flex min-w-0 flex-1 flex-col gap-6">
+        <section class="rounded-2xl border border-gray-200 bg-white p-6">
+          <div class="flex flex-wrap items-center gap-2">
+            @if (d.urgente) {
+              <span
+                class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800"
+                >URGENT</span
+              >
+            }
+            <span
+              class="rounded-full px-2 py-0.5 text-xs font-semibold"
+              [class]="etiquettes[d.statut].classes"
+              >{{ etiquettes[d.statut].libelle }}</span
+            >
+          </div>
+          <h2 class="mt-3 text-2xl font-semibold text-gray-900">{{ d.serviceTitre }}</h2>
+          <p class="mt-1 text-sm text-gray-600">
+            Demande n° {{ d.id }} · {{ d.professionnelNom }} · {{ d.adresse }}
+            @if (d.zoneNom) {
+              ({{ d.zoneNom }})
+            }
+          </p>
+          <p class="mt-4 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
+          <app-photos-demande [demandeId]="d.id" />
+          <p class="mt-3 text-sm text-gray-600">
+            Date souhaitée : <strong>{{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}</strong>
+            @if (d.visiteDemandee) {
+              · Visite demandée
+              @if (d.fraisVisite !== null) {
+                ({{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }})
+              }
+            }
+          </p>
+
+          <!-- La frise des 9 étapes (seulement pour le parcours normal) -->
+          @if (etape() >= 0) {
+            <ol class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-9">
+              @for (p of parcours; track p.statut; let i = $index) {
+                <li class="flex flex-col items-center gap-1 text-center">
+                  <span
+                    class="flex size-8 items-center justify-center rounded-full text-sm font-semibold"
+                    [class]="
+                      i < etape()
+                        ? 'bg-brand-500 text-white'
+                        : i === etape()
+                          ? 'border-2 border-brand-500 bg-white text-brand-500'
+                          : 'bg-gray-100 text-gray-500'
+                    "
+                    >{{ i < etape() ? '✓' : i + 1 }}</span
+                  >
+                  <span
+                    class="text-xs"
+                    [class]="i === etape() ? 'font-bold text-brand-500' : 'text-gray-600'"
+                    >{{ p.libelle }}</span
+                  >
+                </li>
+              }
+            </ol>
+          }
+
+          <!-- Ce qui se passe maintenant -->
+          @switch (d.statut) {
+            @case ('CREEE') {
+              <div class="notice">
+                {{ d.professionnelNom }} doit répondre avant le
+                <strong>{{ d.dateExpiration | date: "dd/MM/yyyy 'à' HH:mm" }}</strong
+                >. Sans réponse, la demande expire.
+              </div>
+            }
+            @case ('ACCEPTEE') {
+              <div class="notice success">
+                {{ d.professionnelNom }} a accepté votre demande. Il va vous envoyer un devis.
+              </div>
+            }
+            @case ('REFUSEE') {
+              <div class="notice error"><strong>Refusée :</strong> {{ d.motifRefus }}</div>
+            }
+            @case ('ANNULEE') {
+              <div class="notice"><strong>Annulée :</strong> {{ d.motifAnnulation }}</div>
+            }
+            @case ('EXPIREE') {
+              <div class="notice">
+                Le professionnel n'a pas répondu à temps. Vous pouvez faire une nouvelle demande.
+              </div>
+            }
+            @case ('EN_LITIGE') {
+              <div class="notice error">
+                Le professionnel conteste le paiement : l'administrateur examine le dossier.
+              </div>
+            }
+          }
+
+          @if (actionSuccess()) {
+            <div class="notice success" role="status">{{ actionSuccess() }}</div>
+          }
+          @if (actionError()) {
+            <div class="notice error" role="alert">{{ actionError() }}</div>
+          }
+
+          @if (annulable() && action() !== 'annulation') {
+            <button
+              type="button"
+              class="mt-5 text-sm font-medium text-red-700"
+              (click)="ouvrir('annulation')"
+            >
+              Annuler cette demande
+            </button>
+          }
+        </section>
+
+        <!-- Le devis -->
+        @if (devis(); as v) {
+          <section class="rounded-2xl border border-gray-200 bg-white p-6">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 class="text-xl font-semibold">
+                Devis de {{ v.professionnelNom }}
+                @if (v.numeroVersion > 1) {
+                  <span class="text-base font-normal text-gray-500"
+                    >(version {{ v.numeroVersion }})</span
+                  >
+                }
+              </h3>
+              <span class="text-sm text-gray-500"
+                >Reçu le {{ v.dateEnvoi | date: "dd/MM/yyyy 'à' HH:mm" }}</span
+              >
+            </div>
+            <div class="mt-4 overflow-x-auto rounded-xl border border-gray-200">
+              <table class="w-full min-w-[480px] text-left text-sm">
+                <thead class="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th class="px-4 py-3 font-semibold">Désignation</th>
+                    <th class="px-4 py-3 text-right font-semibold">Quantité</th>
+                    <th class="px-4 py-3 text-right font-semibold">Prix unitaire</th>
+                    <th class="px-4 py-3 text-right font-semibold">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of v.lignes; track l.id) {
+                    <tr class="border-t border-gray-100">
+                      <td class="px-4 py-3">
+                        {{ l.libelle }}
+                        <span class="block text-xs text-gray-500">{{ typeLigne(l.type) }}</span>
+                      </td>
+                      <td class="px-4 py-3 text-right">{{ l.quantite }}</td>
+                      <td class="px-4 py-3 text-right">{{ montant(l.prixUnitaire) }}</td>
+                      <td class="px-4 py-3 text-right">{{ montant(l.montant) }}</td>
+                    </tr>
+                  }
+                  <tr class="border-t-2 border-gray-200 bg-gray-50 font-bold text-gray-900">
+                    <td class="px-4 py-3" colspan="3">Total</td>
+                    <td class="px-4 py-3 text-right">{{ montant(v.montantTotal) }} CFA</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            @if (v.statut === 'REVISION_DEMANDEE') {
+              <div class="notice">
+                Vous avez demandé une révision : « {{ v.motifRevision }} ». En attente du nouveau
+                devis.
+              </div>
+            }
+            @if (v.statut === 'ACCEPTE') {
+              <div class="notice success">Vous avez accepté ce devis.</div>
+            }
+
+            @if (v.statut === 'ENVOYE' && d.statut === 'DEVIS_ENVOYE' && !action()) {
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  class="primary-button"
+                  (click)="accepterDevis()"
+                  [disabled]="busy()"
+                >
+                  Accepter le devis
+                </button>
+                <button type="button" class="secondary-button" (click)="ouvrir('revision')">
+                  Négocier la main-d'œuvre
+                </button>
+                <button
+                  type="button"
+                  class="px-3 text-sm font-semibold text-red-700"
+                  (click)="ouvrir('refus')"
+                >
+                  Refuser
+                </button>
+              </div>
+              <p class="mt-3 text-xs text-gray-500">
+                2 révisions de la main-d'œuvre au maximum. Si vous refusez, la demande est annulée.
+              </p>
+            }
+          </section>
+        }
+
+        <!-- Les blocs suivants s'affichent seuls quand le statut le permet -->
+        <app-suivi-rendez-vous [demande]="d" (actualise)="apresAction($event)" />
+        <app-paiement-client
+          [demande]="d"
+          [montant]="devis()?.montantTotal ?? null"
+          (actualise)="apresAction($event)"
+        />
+        <app-avis-client [demande]="d" (actualise)="apresAction($event)" />
+
+        <!-- Le petit formulaire « motif » (révision, refus ou annulation) -->
+        @if (action(); as a) {
+          <section class="rounded-2xl border border-gray-200 bg-white p-6">
+            <label for="motif" class="text-base">
+              {{
+                a === 'revision'
+                  ? 'Que voulez-vous négocier ?'
+                  : a === 'refus'
+                    ? 'Pourquoi refusez-vous le devis ?'
+                    : 'Pourquoi annulez-vous la demande ?'
+              }}
+              <span class="required">*</span>
+            </label>
+            <textarea
+              id="motif"
+              [formControl]="motif"
+              rows="3"
+              class="w-full rounded-lg border border-gray-300 p-3 text-base"
+              [attr.aria-invalid]="motif.touched && motif.invalid"
+            ></textarea>
+            @if (motif.touched && motif.invalid) {
+              <p class="field-error">Le motif est obligatoire (500 caractères maximum).</p>
+            }
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                class="primary-button"
+                (click)="validerMotif()"
+                [disabled]="busy()"
+              >
+                {{ busy() ? 'Envoi…' : 'Envoyer' }}
+              </button>
+              <button type="button" class="secondary-button" (click)="fermer()">Retour</button>
+            </div>
+          </section>
+        }
+      </div>
+    }
+  </div>
+}
