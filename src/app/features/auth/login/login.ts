@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { ACCUEIL_ROLE } from '../../../core/auth/accueil-role';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiError } from '../../../core/http/api-error';
 @Component({ imports: [ReactiveFormsModule, RouterLink], templateUrl: './login.html' })
@@ -36,10 +37,13 @@ export class Login {
       .login(email.trim(), motDePasse)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
-        next: () => {
+        next: (tokens) => {
           // Sécurité : on n'accepte qu'une adresse interne ("/…", jamais "//autre-site")
           const interne = this.retour?.startsWith('/') && !this.retour.startsWith('//');
-          void this.router.navigateByUrl(interne && this.retour ? this.retour : '/espace');
+          // Sinon, chacun arrive sur son tableau de bord (client, pro ou admin)
+          void this.router.navigateByUrl(
+            interne && this.retour ? this.retour : ACCUEIL_ROLE[tokens.role],
+          );
         },
         error: (error) => this.error.set(apiError(error)),
       });

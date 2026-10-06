@@ -24,7 +24,7 @@
       </nav>
       <div class="flex flex-wrap gap-2.5">
         @if (connecte()) {
-          <a routerLink="/espace" class="primary-button">Mon espace</a>
+          <a [routerLink]="monEspace()" class="primary-button">Mon espace</a>
         } @else {
           <a routerLink="/connexion" class="secondary-button flex min-h-11 items-center"
             >Se connecter</a

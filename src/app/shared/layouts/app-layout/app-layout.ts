@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   IsActiveMatchOptions,
@@ -9,6 +9,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { filter, interval, merge, startWith } from 'rxjs';
+import { ACCUEIL_ROLE } from '../../../core/auth/accueil-role';
 import { Role } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { CompteursService } from '../../../features/notifications/data-access/compteurs.service';
@@ -20,9 +21,10 @@ interface LienMenu {
   compteur?: 'messages' | 'notifications' | 'pros' | 'litiges';
 }
 
-// Le menu de chaque rôle
+// Le menu de chaque rôle (dans la barre de gauche)
 const MENUS: Record<Role, LienMenu[]> = {
   CLIENT: [
+    { libelle: 'Tableau de bord', chemin: '/client' },
     { libelle: 'Trouver un pro', chemin: '/recherche' },
     { libelle: 'Mes demandes', chemin: '/mes-demandes' },
     { libelle: 'Mes favoris', chemin: '/favoris' },
@@ -31,6 +33,7 @@ const MENUS: Record<Role, LienMenu[]> = {
     { libelle: 'Mon compte', chemin: '/espace' },
   ],
   PROFESSIONNEL: [
+    { libelle: 'Tableau de bord', chemin: '/pro' },
     { libelle: 'Demandes reçues', chemin: '/demandes-recues' },
     { libelle: 'Mes services', chemin: '/mes-services' },
     { libelle: 'Mon profil', chemin: '/mon-profil' },
@@ -43,17 +46,21 @@ const MENUS: Record<Role, LienMenu[]> = {
     { libelle: 'Professionnels', chemin: '/admin/professionnels', compteur: 'pros' },
     { libelle: 'Litiges', chemin: '/admin/litiges', compteur: 'litiges' },
     { libelle: 'Comptes', chemin: '/admin/comptes' },
+    { libelle: 'Catégories', chemin: '/admin/categories' },
     { libelle: 'Mon compte', chemin: '/espace' },
   ],
 };
 
-const LIBELLES_ROLES: Record<Role, string> = {
-  CLIENT: 'Client',
-  PROFESSIONNEL: 'Professionnel',
-  ADMINISTRATEUR: 'Administrateur',
+// Le petit titre sous le nom de la plateforme
+const ESPACES: Record<Role, string> = {
+  CLIENT: 'ESPACE CLIENT',
+  PROFESSIONNEL: 'ESPACE PROFESSIONNEL',
+  ADMINISTRATEUR: 'ADMINISTRATION',
 };
 
-// La mise en page de tous les écrans "connecté" : en-tête, menu selon le rôle, contenu
+// La mise en page de tous les écrans « connecté » :
+// une barre de menu à gauche (selon le rôle) et le contenu à droite.
+// Sur téléphone, la barre est cachée : le bouton « Menu » la fait glisser.
 @Component({
   selector: 'app-app-layout',
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
@@ -64,7 +71,7 @@ export class AppLayout {
   private readonly router = inject(Router);
   readonly compteurs = inject(CompteursService);
 
-  // Le lien du menu est souligné si le chemin est exactement le sien,
+  // Le lien du menu est en surbrillance si le chemin est exactement le sien,
   // même avec des paramètres en plus (ex : /mes-demandes?demande=18)
   readonly optionsLienActif: IsActiveMatchOptions = {
     paths: 'exact',
@@ -73,23 +80,35 @@ export class AppLayout {
     matrixParams: 'ignored',
   };
 
+  // Sur téléphone : la barre de menu est-elle ouverte ?
+  readonly menuOuvert = signal(false);
+
   // computed : se recalcule tout seul si la session change
   readonly liens = computed(() => {
     const role = this.auth.session()?.role;
     return role ? MENUS[role] : [];
   });
 
-  readonly libelleRole = computed(() => {
+  readonly espace = computed(() => {
     const role = this.auth.session()?.role;
-    return role ? LIBELLES_ROLES[role] : '';
+    return role ? ESPACES[role] : '';
+  });
+
+  // Le logo ramène au tableau de bord du rôle
+  readonly accueil = computed(() => {
+    const role = this.auth.session()?.role;
+    return role ? ACCUEIL_ROLE[role] : '/';
   });
 
   constructor() {
+    const changementsDePage = this.router.events.pipe(filter((e) => e instanceof NavigationEnd));
     // Les compteurs sont mis à jour : tout de suite, à chaque changement de page,
     // et toutes les 30 secondes
-    merge(interval(30000), this.router.events.pipe(filter((e) => e instanceof NavigationEnd)))
+    merge(interval(30000), changementsDePage)
       .pipe(startWith(0), takeUntilDestroyed())
       .subscribe(() => this.compteurs.rafraichir());
+    // Sur téléphone, on referme le menu dès qu'on a choisi une page
+    changementsDePage.pipe(takeUntilDestroyed()).subscribe(() => this.menuOuvert.set(false));
   }
 
   nombre(lien: LienMenu) {

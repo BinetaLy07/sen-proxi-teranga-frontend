@@ -1,40 +1,77 @@
 <div class="min-h-screen bg-gray-50">
-  <header class="border-b border-gray-200 bg-white">
-    <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 pt-5">
-      <a routerLink="/espace" class="brand" aria-label="Sen Proxi Teranga, mon espace"
-        ><span class="brand-mark">S<span>•</span></span
-        >sen proxi teranga</a
-      >
-      <div class="flex items-center gap-3">
-        <span
-          class="hidden rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500 sm:inline-flex"
-          >{{ libelleRole() }}</span
-        >
-        <button class="secondary-button" (click)="deconnecter()">Se déconnecter</button>
-      </div>
-    </div>
+  <!-- ===== Sur téléphone : une barre en haut avec le bouton « Menu » ===== -->
+  <header class="flex items-center justify-between bg-brand-950 px-5 py-3 text-white lg:hidden">
+    <a [routerLink]="accueil()" class="font-bold">Sen Proxi Teranga</a>
+    <button
+      type="button"
+      class="rounded-lg border border-white/25 px-3 py-2 text-sm font-medium"
+      [attr.aria-expanded]="menuOuvert()"
+      aria-controls="menu-principal"
+      (click)="menuOuvert.set(!menuOuvert())"
+    >
+      {{ menuOuvert() ? '✕ Fermer' : '☰ Menu' }}
+    </button>
+  </header>
 
-    <!-- Le menu : défile horizontalement sur téléphone -->
-    <nav class="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-6 pt-3" aria-label="Menu principal">
+  <!-- Fond sombre derrière le menu ouvert (téléphone) : un clic le referme -->
+  @if (menuOuvert()) {
+    <div
+      class="fixed inset-0 z-30 bg-black/40 lg:hidden"
+      aria-hidden="true"
+      (click)="menuOuvert.set(false)"
+    ></div>
+  }
+
+  <!-- ===== La barre de menu à gauche ===== -->
+  <aside
+    id="menu-principal"
+    class="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-brand-950 px-4 py-6 text-white transition-transform lg:translate-x-0"
+    [class]="menuOuvert() ? 'translate-x-0' : '-translate-x-full'"
+  >
+    <a [routerLink]="accueil()" class="px-2">
+      <span class="flex items-center gap-2.5 text-lg font-bold whitespace-nowrap"
+        ><span
+          class="flex size-9 items-center justify-center rounded-xl bg-brand-500 text-lg"
+          aria-hidden="true"
+          >S<span class="text-emerald-300">•</span></span
+        >Sen Proxi Teranga</span
+      >
+      <span class="mt-1.5 block text-[11px] font-semibold tracking-[.14em] text-emerald-300">{{
+        espace()
+      }}</span>
+    </a>
+
+    <nav class="mt-8 flex flex-col gap-1" aria-label="Menu principal">
       @for (lien of liens(); track lien.chemin) {
         <a
           [routerLink]="lien.chemin"
-          routerLinkActive="!border-brand-500 !text-brand-500"
+          routerLinkActive="!bg-white !font-semibold !text-brand-950"
           [routerLinkActiveOptions]="optionsLienActif"
-          class="whitespace-nowrap border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-600 hover:text-gray-900"
+          class="flex items-center justify-between rounded-lg px-4 py-2.5 text-[15px] text-white/80 hover:bg-white/10 hover:text-white"
           >{{ lien.libelle }}
           @if (nombre(lien) > 0) {
             <span
-              class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
               >{{ nombre(lien) }}<span class="sr-only"> {{ texteCompteur(lien) }}</span></span
             >
           }
         </a>
       }
     </nav>
-  </header>
 
-  <main class="mx-auto max-w-5xl px-6 py-10">
-    <router-outlet />
+    <button
+      type="button"
+      class="mt-auto rounded-lg px-4 py-2.5 text-left text-sm text-white/60 hover:bg-white/10 hover:text-white"
+      (click)="deconnecter()"
+    >
+      Se déconnecter
+    </button>
+  </aside>
+
+  <!-- ===== Le contenu de la page ===== -->
+  <main class="px-5 py-8 sm:px-8 lg:ml-64 lg:px-10 lg:py-10">
+    <div class="mx-auto max-w-6xl">
+      <router-outlet />
+    </div>
   </main>
 </div>

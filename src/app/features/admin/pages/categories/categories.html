@@ -1,0 +1,123 @@
+<p class="eyebrow">CATÉGORIES</p>
+<h1 class="page-title">Catégories de métiers</h1>
+<p class="page-description">
+  Les pros classent leurs services dans ces catégories, et les clients s'en servent pour filtrer la
+  recherche. Une catégorie désactivée n'est plus proposée.
+</p>
+
+@if (message()) {
+  <div class="notice success" role="status">{{ message() }}</div>
+}
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+
+<div class="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+  <!-- ===== Le formulaire : ajouter ou modifier ===== -->
+  <section
+    class="w-full rounded-2xl border bg-white p-6 lg:w-96 lg:shrink-0"
+    [class]="enModification() !== null ? 'border-brand-500' : 'border-gray-200'"
+  >
+    <h2 class="text-lg font-semibold text-gray-900">
+      {{ enModification() !== null ? 'Modifier la catégorie' : 'Ajouter une catégorie' }}
+    </h2>
+    <form [formGroup]="form" (ngSubmit)="enregistrer()" class="mt-4 space-y-4" novalidate>
+      <div>
+        <label for="categorie-nom">Nom <span class="required">*</span></label
+        ><input
+          id="categorie-nom"
+          formControlName="nom"
+          placeholder="Ex. : Climatisation"
+          [attr.aria-invalid]="invalid('nom')"
+        />
+        @if (invalid('nom')) {
+          <p class="field-error">Le nom est obligatoire (100 caractères maximum).</p>
+        }
+      </div>
+      <div>
+        <label for="categorie-description"
+          >Description <span class="font-normal text-gray-500">(facultatif)</span></label
+        >
+        <textarea
+          id="categorie-description"
+          formControlName="description"
+          rows="2"
+          class="w-full rounded-lg border border-gray-300 p-3 text-base"
+          placeholder="Ex. : Installation et entretien des climatiseurs"
+        ></textarea>
+        @if (invalid('description')) {
+          <p class="field-error">500 caractères maximum.</p>
+        }
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="primary-button" [disabled]="busy()">
+          {{ enModification() !== null ? 'Enregistrer' : '+ Ajouter' }}
+        </button>
+        @if (enModification() !== null) {
+          <button type="button" class="secondary-button" (click)="annuler()">Annuler</button>
+        }
+      </div>
+    </form>
+  </section>
+
+  <!-- ===== La liste ===== -->
+  <section class="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white p-6">
+    <h2 class="text-lg font-semibold text-gray-900">
+      {{ categories().length }} catégorie{{ categories().length > 1 ? 's' : '' }}
+      <span class="text-sm font-normal text-gray-500">· {{ nombreActives() }} active(s)</span>
+    </h2>
+    @if (loading()) {
+      <p class="mt-4 text-sm text-gray-500" role="status">Chargement…</p>
+    }
+    <ul class="mt-3 flex flex-col">
+      @for (c of triees(); track c.id) {
+        <li
+          class="flex flex-wrap items-center gap-3 border-b border-gray-100 py-3 last:border-0"
+          [class.opacity-60]="!c.active"
+        >
+          <span
+            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 font-bold text-brand-500"
+            aria-hidden="true"
+            >{{ c.nom.charAt(0) }}</span
+          >
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold text-gray-900">
+              {{ c.nom }}
+              @if (!c.active) {
+                <span class="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                  >Désactivée</span
+                >
+              }
+            </p>
+            @if (c.description) {
+              <p class="text-sm text-gray-600">{{ c.description }}</p>
+            }
+          </div>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="modifier(c)"
+              [disabled]="busy()"
+            >
+              Modifier
+            </button>
+            <button
+              type="button"
+              class="secondary-button"
+              [class]="c.active ? 'text-red-700' : 'text-emerald-700'"
+              (click)="basculer(c)"
+              [disabled]="busy()"
+            >
+              {{ c.active ? 'Désactiver' : 'Activer' }}
+            </button>
+          </div>
+        </li>
+      } @empty {
+        @if (!loading()) {
+          <li class="text-sm text-gray-500">Aucune catégorie pour le moment.</li>
+        }
+      }
+    </ul>
+  </section>
+</div>

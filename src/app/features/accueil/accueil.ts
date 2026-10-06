@@ -1,6 +1,7 @@
 import { Component, computed, DOCUMENT, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ACCUEIL_ROLE } from '../../core/auth/accueil-role';
 import { AuthService } from '../../core/auth/auth.service';
 import { Categorie } from '../categories/data-access/categorie.models';
 import { CategorieApiService } from '../categories/data-access/categorie-api.service';
@@ -44,6 +45,10 @@ export class Accueil {
 
   // Déjà connecté ? On affiche « Mon espace » au lieu de « Se connecter »
   readonly connecte = computed(() => this.auth.session() !== null);
+  readonly monEspace = computed(() => {
+    const role = this.auth.session()?.role;
+    return role ? ACCUEIL_ROLE[role] : '/connexion';
+  });
 
   readonly categories = signal<Categorie[]>([]);
   readonly zones = signal<Zone[]>([]);

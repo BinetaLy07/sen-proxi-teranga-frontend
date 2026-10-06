@@ -72,6 +72,15 @@ export const routes: Routes = [
 
       // Client
       {
+        path: 'client',
+        title: 'Tableau de bord | Sen Proxi Teranga',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () =>
+          import('./features/tableaux-de-bord/tableau-client/tableau-client').then(
+            (m) => m.TableauClient,
+          ),
+      },
+      {
         path: 'recherche',
         title: 'Trouver un pro | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT')],
@@ -101,6 +110,13 @@ export const routes: Routes = [
       },
 
       // Professionnel
+      {
+        path: 'pro',
+        title: 'Tableau de bord | Sen Proxi Teranga',
+        canActivate: [roleGuard('PROFESSIONNEL')],
+        loadComponent: () =>
+          import('./features/tableaux-de-bord/tableau-pro/tableau-pro').then((m) => m.TableauPro),
+      },
       {
         path: 'demandes-recues',
         title: 'Demandes reçues | Sen Proxi Teranga',
@@ -150,6 +166,13 @@ export const routes: Routes = [
         canActivate: [roleGuard('ADMINISTRATEUR')],
         loadComponent: () =>
           import('./features/admin/pages/litiges/litiges').then((m) => m.Litiges),
+      },
+      {
+        path: 'admin/categories',
+        title: 'Catégories | Sen Proxi Teranga',
+        canActivate: [roleGuard('ADMINISTRATEUR')],
+        loadComponent: () =>
+          import('./features/admin/pages/categories/categories').then((m) => m.Categories),
       },
       {
         path: 'admin/comptes',

@@ -1,167 +1,317 @@
-<p class="eyebrow">UNE COMMUNAUTÉ, MILLE SAVOIR-FAIRE</p>
-<h1 class="page-title">Faites partie du quartier.</h1>
-<p class="page-description">Créez votre compte et rapprochons-nous.</p>
-<div class="role-picker" role="group" aria-label="Type de compte">
-  <button
-    type="button"
-    [class.selected]="role() === 'CLIENT'"
-    [attr.aria-pressed]="role() === 'CLIENT'"
-    (click)="selectRole('CLIENT')"
-  >
-    <span class="text-lg">⌂</span><strong>Je suis client</strong
-    ><small>Je cherche un service</small></button
-  ><button
-    type="button"
-    [class.selected]="role() === 'PROFESSIONNEL'"
-    [attr.aria-pressed]="role() === 'PROFESSIONNEL'"
-    (click)="selectRole('PROFESSIONNEL')"
-  >
-    <span class="text-lg">✦</span><strong>Je suis professionnel</strong
-    ><small>Je propose mes services</small>
+@if (etape() === 1) {
+  <!-- ===== Étape 1 : client ou professionnel ? ===== -->
+  <p class="eyebrow">ÉTAPE 1 SUR 2</p>
+  <h1 class="page-title">Rejoignez la plateforme</h1>
+  <p class="page-description">Comment souhaitez-vous utiliser Sen Proxi Teranga ?</p>
+
+  <div class="mt-8 grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Type de compte">
+    <button
+      type="button"
+      role="radio"
+      [attr.aria-checked]="role() === 'CLIENT'"
+      (click)="choisir('CLIENT')"
+      class="flex flex-col items-start gap-2 rounded-2xl border-2 p-5 text-left"
+      [class]="role() === 'CLIENT' ? 'border-brand-500 bg-indigo-50' : 'border-gray-200 bg-white'"
+    >
+      <span class="text-2xl" aria-hidden="true">👤</span>
+      <strong class="text-gray-900">Je suis un client</strong>
+      <span class="text-sm text-gray-600"
+        >Je cherche un professionnel pour un service de proximité</span
+      >
+    </button>
+    <button
+      type="button"
+      role="radio"
+      [attr.aria-checked]="role() === 'PROFESSIONNEL'"
+      (click)="choisir('PROFESSIONNEL')"
+      class="flex flex-col items-start gap-2 rounded-2xl border-2 p-5 text-left"
+      [class]="
+        role() === 'PROFESSIONNEL' ? 'border-brand-500 bg-indigo-50' : 'border-gray-200 bg-white'
+      "
+    >
+      <span class="text-2xl" aria-hidden="true">🛠️</span>
+      <strong class="text-gray-900">Je suis un professionnel</strong>
+      <span class="text-sm text-gray-600">Je propose mes services sur la plateforme</span>
+    </button>
+  </div>
+
+  <button type="button" class="primary-button mt-6 w-full" (click)="continuer()">
+    Continuer <span aria-hidden="true">→</span>
   </button>
-</div>
-@if (error()) {
-  <div class="notice error" role="alert">{{ error() }}</div>
-}
-<form
-  [formGroup]="form"
-  (ngSubmit)="submit()"
-  class="space-y-4"
-  [attr.aria-busy]="busy()"
-  novalidate
->
-  <div class="grid gap-4 sm:grid-cols-2">
-    <div>
-      <label for="prenom">Prénom <span class="required">*</span></label
-      ><input
-        id="prenom"
-        type="text"
-        autocomplete="given-name"
-        formControlName="prenom"
-        placeholder="Awa"
-        [attr.aria-invalid]="invalid('prenom')"
-        aria-describedby="prenom-error"
-      />
-      @if (invalid('prenom')) {
-        <p id="prenom-error" class="field-error">Votre prénom est obligatoire.</p>
-      }
-    </div>
-    <div>
-      <label for="nom">Nom <span class="required">*</span></label
-      ><input
-        id="nom"
-        type="text"
-        autocomplete="family-name"
-        formControlName="nom"
-        placeholder="Diop"
-        [attr.aria-invalid]="invalid('nom')"
-        aria-describedby="nom-error"
-      />
-      @if (invalid('nom')) {
-        <p id="nom-error" class="field-error">Votre nom est obligatoire.</p>
-      }
-    </div>
-  </div>
-  <div>
-    <label for="email">Adresse email <span class="required">*</span></label
-    ><input
-      id="email"
-      type="email"
-      autocomplete="email"
-      formControlName="email"
-      placeholder="vous@exemple.com"
-      [attr.aria-invalid]="invalid('email')"
-      aria-describedby="email-error"
-    />
-    @if (invalid('email')) {
-      <p id="email-error" class="field-error">Saisissez une adresse email valide.</p>
-    }
-  </div>
-  <div>
-    <label for="telephone">Téléphone <span class="required">*</span></label
-    ><input
-      id="telephone"
-      type="tel"
-      autocomplete="tel"
-      formControlName="telephone"
-      placeholder="771234567"
-      [attr.aria-invalid]="invalid('telephone')"
-      aria-describedby="telephone-error"
-    />
-    @if (invalid('telephone')) {
-      <p id="telephone-error" class="field-error">
-        Saisissez un numéro sénégalais valide, avec ou sans +221.
-      </p>
-    }
-  </div>
+  <p class="mt-6 text-sm text-gray-500">
+    Déjà inscrit ? <a routerLink="/connexion" class="text-link">Se connecter</a>
+  </p>
+} @else {
+  <!-- ===== Étape 2 : le formulaire du rôle choisi ===== -->
+  <button type="button" class="text-link text-sm" (click)="changerDeRole()">
+    ← Changer de type de compte
+  </button>
+  <p class="mt-4">
+    <span
+      class="rounded-full border px-3 py-1 text-xs font-semibold"
+      [class]="
+        role() === 'CLIENT'
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+          : 'border-amber-200 bg-amber-50 text-amber-800'
+      "
+      >{{ role() === 'CLIENT' ? 'Compte client' : 'Compte professionnel' }}</span
+    >
+  </p>
+  <h1 class="page-title mt-4">
+    {{ role() === 'CLIENT' ? 'Créer mon compte' : 'Créer mon compte professionnel' }}
+  </h1>
+
   @if (role() === 'PROFESSIONNEL') {
+    <div class="notice">
+      Votre profil sera vérifié par l'administrateur avant d'apparaître dans les recherches.
+    </div>
+  }
+  @if (error()) {
+    <div class="notice error" role="alert">{{ error() }}</div>
+  }
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="mt-6 space-y-4"
+    [attr.aria-busy]="busy()"
+    novalidate
+  >
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="prenom">Prénom <span class="required">*</span></label
+        ><input
+          id="prenom"
+          type="text"
+          autocomplete="given-name"
+          formControlName="prenom"
+          placeholder="Awa"
+          [attr.aria-invalid]="invalid('prenom')"
+        />
+        @if (invalid('prenom')) {
+          <p class="field-error">Votre prénom est obligatoire.</p>
+        }
+      </div>
+      <div>
+        <label for="nom">Nom <span class="required">*</span></label
+        ><input
+          id="nom"
+          type="text"
+          autocomplete="family-name"
+          formControlName="nom"
+          placeholder="Diop"
+          [attr.aria-invalid]="invalid('nom')"
+        />
+        @if (invalid('nom')) {
+          <p class="field-error">Votre nom est obligatoire.</p>
+        }
+      </div>
+    </div>
+
     <div>
-      <label for="metier">Votre métier <span class="required">*</span></label
+      <label for="telephone">Numéro de téléphone <span class="required">*</span></label
       ><input
-        id="metier"
-        formControlName="metier"
-        placeholder="Ex. : plombier, couturier, électricien"
-        [attr.aria-invalid]="invalid('metier')"
+        id="telephone"
+        type="tel"
+        autocomplete="tel"
+        formControlName="telephone"
+        placeholder="771234567"
+        [attr.aria-invalid]="invalid('telephone')"
       />
-      @if (invalid('metier')) {
-        <p class="field-error">Précisez votre métier (100 caractères maximum).</p>
+      @if (invalid('telephone')) {
+        <p class="field-error">Saisissez un numéro sénégalais valide, avec ou sans +221.</p>
       }
     </div>
-  }
-  <div>
-    <label for="password">Mot de passe <span class="required">*</span></label>
-    <div class="password-field">
-      <input
-        id="password"
-        [type]="visible() ? 'text' : 'password'"
-        formControlName="motDePasse"
-        autocomplete="new-password"
-        placeholder="8 caractères minimum"
-        [attr.aria-invalid]="invalid('motDePasse')"
-      /><button
-        type="button"
-        (click)="visible.set(!visible())"
-        [attr.aria-label]="visible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
-      >
-        {{ visible() ? 'Masquer' : 'Voir' }}
-      </button>
+
+    <div>
+      <label for="email">Email <span class="required">*</span></label
+      ><input
+        id="email"
+        type="email"
+        autocomplete="email"
+        formControlName="email"
+        placeholder="vous@exemple.com"
+        [attr.aria-invalid]="invalid('email')"
+      />
+      @if (invalid('email')) {
+        <p class="field-error">Saisissez une adresse email valide.</p>
+      }
     </div>
-    @if (invalid('motDePasse')) {
-      <p class="field-error">Utilisez de 8 à 72 caractères (72 octets maximum).</p>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="password">Mot de passe <span class="required">*</span></label>
+        <div class="password-field">
+          <input
+            id="password"
+            [type]="visible() ? 'text' : 'password'"
+            formControlName="motDePasse"
+            autocomplete="new-password"
+            placeholder="8 caractères minimum"
+            [attr.aria-invalid]="invalid('motDePasse')"
+          /><button
+            type="button"
+            (click)="visible.set(!visible())"
+            [attr.aria-label]="visible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            {{ visible() ? 'Masquer' : 'Voir' }}
+          </button>
+        </div>
+        @if (invalid('motDePasse')) {
+          <p class="field-error">De 8 à 72 caractères.</p>
+        }
+      </div>
+      <div>
+        <label for="confirmation">Confirmer <span class="required">*</span></label
+        ><input
+          id="confirmation"
+          type="password"
+          formControlName="confirmation"
+          autocomplete="new-password"
+          placeholder="Le même mot de passe"
+          [attr.aria-invalid]="form.controls.confirmation.touched && form.hasError('mismatch')"
+        />
+        @if (
+          form.controls.confirmation.touched &&
+          (invalid('confirmation') || form.hasError('mismatch'))
+        ) {
+          <p class="field-error">Les mots de passe doivent être identiques.</p>
+        }
+      </div>
+    </div>
+
+    @if (role() === 'CLIENT') {
+      <!-- ===== Champs du client ===== -->
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="zone-client"
+            >Quartier <span class="font-normal text-gray-500">(facultatif)</span></label
+          >
+          <select
+            id="zone-client"
+            formControlName="zoneId"
+            class="h-12 w-full rounded-lg border border-gray-300 bg-white px-4 text-base"
+          >
+            <option value="">Choisir…</option>
+            @for (z of quartiers(); track z.id) {
+              <option [value]="z.id">{{ z.nom }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="adresse"
+            >Adresse <span class="font-normal text-gray-500">(facultatif)</span></label
+          ><input
+            id="adresse"
+            formControlName="adresse"
+            placeholder="Ex. : Sicap Liberté, villa 12"
+          />
+        </div>
+      </div>
+    } @else {
+      <!-- ===== Champs du professionnel ===== -->
+      <div>
+        <label for="metier">Métier <span class="required">*</span></label
+        ><input
+          id="metier"
+          formControlName="metier"
+          list="liste-metiers"
+          placeholder="Choisissez ou écrivez votre métier"
+          [attr.aria-invalid]="invalid('metier')"
+        />
+        <datalist id="liste-metiers">
+          @for (m of metiers; track m) {
+            <option [value]="m"></option>
+          }
+        </datalist>
+        @if (invalid('metier')) {
+          <p class="field-error">Le métier est obligatoire (100 caractères maximum).</p>
+        }
+      </div>
+
+      <div>
+        <label for="description"
+          >Description de l'activité
+          <span class="font-normal text-gray-500">(facultatif)</span></label
+        >
+        <textarea
+          id="description"
+          formControlName="description"
+          rows="3"
+          class="w-full rounded-lg border border-gray-300 p-3 text-base"
+          placeholder="Décrivez votre expérience et vos services"
+        ></textarea>
+      </div>
+
+      <fieldset>
+        <legend class="mb-2 text-sm font-medium text-gray-700">
+          Zones d'intervention
+          <span class="font-normal text-gray-500">(cliquez sur vos quartiers)</span>
+        </legend>
+        <div
+          class="flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg border border-gray-200 p-3"
+        >
+          @for (z of quartiers().length > 0 ? quartiers() : communes(); track z.id) {
+            <button
+              type="button"
+              class="rounded-full border px-3 py-1.5 text-sm"
+              [class]="
+                zonesChoisies().includes(z.id)
+                  ? 'border-brand-500 bg-brand-500 text-white'
+                  : 'border-gray-300 bg-white text-gray-700'
+              "
+              [attr.aria-pressed]="zonesChoisies().includes(z.id)"
+              (click)="basculerZone(z.id)"
+            >
+              {{ z.nom }}
+            </button>
+          } @empty {
+            <span class="text-sm text-gray-500">Chargement des quartiers…</span>
+          }
+        </div>
+        <p class="mt-1.5 text-xs text-gray-500">
+          {{ zonesChoisies().length }} zone(s) choisie(s). Vous pourrez les modifier plus tard.
+        </p>
+      </fieldset>
+
+      <div>
+        <label for="whatsapp"
+          >WhatsApp <span class="font-normal text-gray-500">(facultatif)</span></label
+        ><input
+          id="whatsapp"
+          type="tel"
+          formControlName="whatsapp"
+          placeholder="771234567"
+          [attr.aria-invalid]="invalid('whatsapp')"
+        />
+        @if (invalid('whatsapp')) {
+          <p class="field-error">Numéro WhatsApp invalide (ex. : 771234567).</p>
+        }
+      </div>
     }
-  </div>
-  <div>
-    <label for="confirmation">Confirmer le mot de passe <span class="required">*</span></label
-    ><input
-      id="confirmation"
-      type="password"
-      formControlName="confirmation"
-      autocomplete="new-password"
-      placeholder="Saisissez à nouveau votre mot de passe"
-      [attr.aria-invalid]="form.controls.confirmation.touched && form.hasError('mismatch')"
-    />
-    @if (
-      form.controls.confirmation.touched && (invalid('confirmation') || form.hasError('mismatch'))
-    ) {
-      <p class="field-error">Les mots de passe doivent être identiques.</p>
+
+    <label class="checkbox-label"
+      ><input type="checkbox" formControlName="cguAcceptees" /><span
+        >J'accepte les
+        <a routerLink="/conditions" class="text-link" target="_blank" rel="noopener"
+          >conditions d'utilisation</a
+        >
+        de Sen Proxi Teranga.</span
+      ></label
+    >
+    @if (invalid('cguAcceptees')) {
+      <p class="field-error">Vous devez accepter les conditions pour continuer.</p>
     }
-  </div>
-  <label class="checkbox-label"
-    ><input type="checkbox" formControlName="cguAcceptees" /><span
-      >J’accepte les
-      <a routerLink="/conditions" class="text-link" target="_blank" rel="noopener"
-        >conditions d’utilisation</a
-      >
-      de Sen Proxi Teranga.</span
-    ></label
-  >
-  @if (invalid('cguAcceptees')) {
-    <p class="field-error">Vous devez accepter les conditions pour continuer.</p>
-  }
-  <button class="primary-button w-full" type="submit" [disabled]="busy()">
-    {{ busy() ? 'Création en cours…' : 'Créer mon compte' }} <span aria-hidden="true">→</span>
-  </button>
-</form>
-<p class="mt-6 text-sm text-gray-500">
-  Déjà dans le quartier ? <a routerLink="/connexion" class="text-link">Se connecter</a>
-</p>
+
+    <button class="primary-button w-full" type="submit" [disabled]="busy()">
+      @if (busy()) {
+        Création en cours…
+      } @else {
+        {{ role() === 'CLIENT' ? 'Créer mon compte' : 'Soumettre mon inscription' }}
+      }
+    </button>
+  </form>
+  <p class="mt-6 text-sm text-gray-500">
+    Déjà inscrit ? <a routerLink="/connexion" class="text-link">Se connecter</a>
+  </p>
+}

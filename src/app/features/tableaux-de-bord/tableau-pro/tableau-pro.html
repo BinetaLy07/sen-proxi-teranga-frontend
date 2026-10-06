@@ -1,0 +1,162 @@
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <p class="text-sm text-gray-500">
+      @if (profil(); as p) {
+        {{ p.metier }}
+        @if (p.zones.length > 0) {
+          · {{ p.zones.slice(0, 2).join(', ') }}
+        }
+      } @else {
+        Espace professionnel
+      }
+    </p>
+    <h1 class="page-title mt-1">Bonjour {{ profil()?.prenom }}</h1>
+  </div>
+  @if (compte()?.statutVerification; as statut) {
+    <a
+      routerLink="/mon-profil"
+      class="rounded-full border px-4 py-2 text-sm font-semibold"
+      [class]="etiquettesVerification[statut].classes"
+      >{{ statut === 'VALIDE' ? '● Profil vérifié' : etiquettesVerification[statut].libelle }}</a
+    >
+  }
+</div>
+
+@if (compte()?.statutVerification === 'EN_ATTENTE') {
+  <div class="notice">
+    Votre profil est en attente de vérification : les clients ne vous voient pas encore. Complétez
+    <a routerLink="/mon-profil" class="text-link">votre profil</a> pour être validé plus vite.
+  </div>
+}
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+
+<!-- ===== Les 4 compteurs ===== -->
+<div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+    <p class="text-sm text-gray-600">Nouvelles demandes</p>
+    <p class="mt-1 text-3xl font-bold text-brand-500">{{ nouvelles().length }}</p>
+  </div>
+  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+    <p class="text-sm text-gray-600">Devis en attente</p>
+    <p class="mt-1 text-3xl font-bold text-gray-900">{{ devisEnAttente() }}</p>
+  </div>
+  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+    <p class="text-sm text-gray-600">Rendez-vous à venir</p>
+    <p class="mt-1 text-3xl font-bold text-gray-900">{{ agenda().length }}</p>
+  </div>
+  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+    <p class="text-sm text-gray-600">Travaux terminés</p>
+    <p class="mt-1 text-3xl font-bold text-gray-900">{{ termines() }}</p>
+  </div>
+</div>
+
+<div class="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+  <!-- ===== Les nouvelles demandes ===== -->
+  <section class="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white p-6">
+    <h2 class="text-xl font-semibold text-gray-900">Nouvelles demandes reçues</h2>
+    @if (loading()) {
+      <p class="mt-4 text-sm text-gray-500" role="status">Chargement…</p>
+    }
+    <div class="mt-4 flex flex-col gap-3">
+      @for (d of nouvelles(); track d.id) {
+        <div
+          class="flex flex-wrap items-center gap-3 rounded-xl border p-4"
+          [class]="d.urgente ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold text-gray-900">
+              @if (d.urgente) {
+                <span
+                  class="mr-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800"
+                  >URGENT</span
+                >
+              }
+              {{ d.clientNom }} · {{ d.serviceTitre }}
+            </p>
+            <p class="mt-1 line-clamp-1 text-sm text-gray-600">
+              {{ d.description }}
+              @if (d.zoneNom) {
+                · {{ d.zoneNom }}
+              }
+            </p>
+            @if (d.dateExpiration) {
+              <p class="mt-1 text-xs font-semibold text-amber-700">
+                Répondre avant le {{ d.dateExpiration | date: "dd/MM 'à' HH:mm" }}
+              </p>
+            }
+          </div>
+          <a
+            routerLink="/demandes-recues"
+            [queryParams]="{ demande: d.id }"
+            class="primary-button min-h-10 py-2"
+            >Répondre</a
+          >
+        </div>
+      } @empty {
+        @if (!loading()) {
+          <p class="text-sm text-gray-500">Aucune nouvelle demande pour le moment.</p>
+        }
+      }
+    </div>
+  </section>
+
+  <!-- ===== Mon agenda ===== -->
+  <section class="w-full rounded-2xl border border-gray-200 bg-white p-6 lg:w-80 lg:shrink-0">
+    <h2 class="text-xl font-semibold text-gray-900">Mon agenda</h2>
+    <div class="mt-3 flex flex-col">
+      @for (r of agenda(); track r.id) {
+        <a
+          routerLink="/demandes-recues"
+          [queryParams]="{ demande: r.demandeId }"
+          class="flex items-center gap-3 border-b border-gray-100 py-3 last:border-0"
+        >
+          <span
+            class="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg bg-indigo-50 text-brand-500"
+          >
+            <strong class="leading-none">{{ jourMois(r.dateHeure).jour }}</strong>
+            <span class="text-[10px] font-semibold">{{ jourMois(r.dateHeure).mois }}</span>
+          </span>
+          <span class="min-w-0 text-sm">
+            <strong class="block text-gray-900">{{ r.clientNom }} · {{ r.serviceTitre }}</strong>
+            <span class="text-gray-600"
+              >{{ heure(r.dateHeure) }}
+              {{ r.statut === 'PROPOSE' ? '· en attente du client' : '· confirmé' }}</span
+            >
+          </span>
+        </a>
+      } @empty {
+        <p class="text-sm text-gray-500">Aucun rendez-vous prévu.</p>
+      }
+    </div>
+  </section>
+</div>
+
+<!-- ===== Mes réalisations ===== -->
+<section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2 class="text-xl font-semibold text-gray-900">Mes réalisations (visibles par les clients)</h2>
+    <a routerLink="/mon-profil" class="text-link text-sm">+ Ajouter des photos</a>
+  </div>
+  @if (profil(); as p) {
+    @if (p.realisations.length > 0) {
+      <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        @for (r of p.realisations.slice(0, 4); track r.id) {
+          <figure>
+            <app-image-protegee
+              [url]="r.url"
+              [alt]="r.titre"
+              classes="aspect-[4/3] w-full rounded-xl object-cover"
+            />
+            <figcaption class="mt-1 truncate text-sm text-gray-600">{{ r.titre }}</figcaption>
+          </figure>
+        }
+      </div>
+    } @else {
+      <p class="mt-3 text-sm text-gray-500">
+        Ajoutez des photos de vos travaux : elles rassurent les clients.
+      </p>
+    }
+  }
+</section>
