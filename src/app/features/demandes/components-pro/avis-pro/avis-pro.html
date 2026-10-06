@@ -1,0 +1,43 @@
+@if (visible() && charge()) {
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <h3 class="text-xl font-semibold">Avis du client</h3>
+    @if (error()) {
+      <div class="notice error" role="alert">{{ error() }}</div>
+    }
+    @if (avis(); as a) {
+      <p class="mt-3" [attr.aria-label]="a.note + ' étoiles sur 5'">
+        @for (i of etoiles; track i) {
+          <span class="text-2xl" [class]="i <= a.note ? 'text-amber-500' : 'text-gray-300'">★</span>
+        }
+      </p>
+      @if (a.commentaire) {
+        <p class="mt-2 text-gray-700">{{ a.commentaire }}</p>
+      }
+      <p class="mt-1 text-xs text-gray-500">
+        {{ a.clientNom }} · {{ a.dateAvis | date: 'dd/MM/yyyy' }}
+      </p>
+      @if (a.reponse) {
+        <p class="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+          <strong>Votre réponse :</strong> {{ a.reponse }}
+        </p>
+      } @else {
+        <label for="reponse-avis" class="mt-4">Répondre (une seule fois, visible par tous)</label>
+        <textarea
+          id="reponse-avis"
+          [formControl]="reponse"
+          rows="2"
+          class="w-full rounded-lg border border-gray-300 p-3 text-base"
+          placeholder="Ex. : Merci pour votre confiance !"
+        ></textarea>
+        @if (reponse.touched && reponse.invalid) {
+          <p class="field-error">La réponse ne peut pas être vide.</p>
+        }
+        <button type="button" class="primary-button mt-3" (click)="repondre()" [disabled]="busy()">
+          Publier la réponse
+        </button>
+      }
+    } @else {
+      <p class="mt-3 text-gray-600">Le client n'a pas encore donné son avis.</p>
+    }
+  </section>
+}

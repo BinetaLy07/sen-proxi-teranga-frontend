@@ -1,0 +1,140 @@
+@if (visible() && charge()) {
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h3 class="text-xl font-semibold">
+        Devis
+        @if (devis(); as v) {
+          @if (v.numeroVersion > 1) {
+            <span class="text-base font-normal text-gray-500">(version {{ v.numeroVersion }})</span>
+          }
+        }
+      </h3>
+      @if (devis(); as v) {
+        <span class="text-sm text-gray-500"
+          >Envoyé le {{ v.dateEnvoi | date: "dd/MM/yyyy 'à' HH:mm" }}</span
+        >
+      }
+    </div>
+
+    @if (error()) {
+      <div class="notice error" role="alert">{{ error() }}</div>
+    }
+
+    <!-- Le devis déjà envoyé -->
+    @if (devis(); as v) {
+      @if (!peutSaisir()) {
+        <div class="mt-4 overflow-x-auto rounded-xl border border-gray-200">
+          <table class="w-full min-w-[480px] text-left text-sm">
+            <thead class="bg-gray-50 text-gray-600">
+              <tr>
+                <th class="px-4 py-3 font-semibold">Désignation</th>
+                <th class="px-4 py-3 text-right font-semibold">Quantité</th>
+                <th class="px-4 py-3 text-right font-semibold">Prix unitaire</th>
+                <th class="px-4 py-3 text-right font-semibold">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of v.lignes; track l.id) {
+                <tr class="border-t border-gray-100">
+                  <td class="px-4 py-3">
+                    {{ l.libelle }}
+                    <span class="block text-xs text-gray-500">{{ typeLigne(l.type) }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-right">{{ l.quantite }}</td>
+                  <td class="px-4 py-3 text-right">{{ montant(l.prixUnitaire) }}</td>
+                  <td class="px-4 py-3 text-right">{{ montant(l.montant) }}</td>
+                </tr>
+              }
+              <tr class="border-t-2 border-gray-200 bg-gray-50 font-bold text-gray-900">
+                <td class="px-4 py-3" colspan="3">Total</td>
+                <td class="px-4 py-3 text-right">{{ montant(v.montantTotal) }} CFA</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        @switch (v.statut) {
+          @case ('ENVOYE') {
+            <div class="notice">En attente de la réponse du client.</div>
+          }
+          @case ('ACCEPTE') {
+            <div class="notice success">Le client a accepté ce devis.</div>
+          }
+          @case ('REFUSE') {
+            <div class="notice error">Le client a refusé ce devis : « {{ v.motifRefus }} ».</div>
+          }
+        }
+      } @else {
+        <div class="notice">
+          Le client demande une révision : « <strong>{{ v.motifRevision }}</strong> ». Modifiez les
+          lignes, puis renvoyez le devis.
+        </div>
+      }
+    }
+
+    <!-- Le formulaire : premier devis ou révision -->
+    @if (peutSaisir()) {
+      <p class="mt-3 text-sm text-gray-600">
+        Une ligne de main-d'œuvre (obligatoire), des lignes de matériel, et un déplacement si
+        besoin.
+      </p>
+      <div class="mt-4 space-y-3">
+        @for (ligne of lignes.controls; track ligne; let i = $index) {
+          <div
+            [formGroup]="ligne"
+            class="grid gap-3 rounded-xl border border-gray-200 p-3 sm:grid-cols-[1fr_6rem_8rem_auto] sm:items-end"
+          >
+            <div>
+              <label [for]="'libelle-' + i" class="text-xs">{{
+                typeLigne(ligne.controls.type.value)
+              }}</label>
+              <input [id]="'libelle-' + i" formControlName="libelle" placeholder="Désignation" />
+            </div>
+            <div>
+              <label [for]="'quantite-' + i" class="text-xs">Quantité</label>
+              <input [id]="'quantite-' + i" type="number" min="1" formControlName="quantite" />
+            </div>
+            <div>
+              <label [for]="'prix-' + i" class="text-xs">Prix unitaire (F)</label>
+              <input [id]="'prix-' + i" type="number" min="1" formControlName="prixUnitaire" />
+            </div>
+            @if (ligne.controls.type.value !== 'MAIN_OEUVRE') {
+              <button
+                type="button"
+                class="h-12 px-3 text-sm font-medium text-red-700"
+                (click)="supprimer(i)"
+                [attr.aria-label]="'Supprimer la ligne ' + (i + 1)"
+              >
+                Supprimer
+              </button>
+            }
+            @if (ligne.touched && ligne.invalid) {
+              <p class="field-error sm:col-span-4">
+                Remplissez la désignation, une quantité d'au moins 1 et un prix.
+              </p>
+            }
+          </div>
+        }
+      </div>
+      <div class="mt-3 flex flex-wrap gap-3">
+        <button type="button" class="secondary-button" (click)="ajouterMateriel()">
+          + Matériel
+        </button>
+        @if (!aDeplacement()) {
+          <button type="button" class="secondary-button" (click)="ajouterDeplacement()">
+            + Déplacement
+          </button>
+        }
+      </div>
+      <div
+        class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4"
+      >
+        <p class="text-lg">
+          Total : <strong>{{ montant(total()) }} CFA</strong>
+        </p>
+        <button type="button" class="primary-button" (click)="envoyer()" [disabled]="busy()">
+          {{ busy() ? 'Envoi…' : devis() ? 'Envoyer le nouveau devis' : 'Envoyer le devis' }}
+        </button>
+      </div>
+    }
+  </section>
+}

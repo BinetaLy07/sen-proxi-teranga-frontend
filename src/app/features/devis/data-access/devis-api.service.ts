@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { Devis } from './devis.models';
+import { Devis, LigneDevisSaisie } from './devis.models';
 
 // Backend : DevisController (côté client)
 @Injectable({ providedIn: 'root' })
@@ -34,6 +34,24 @@ export class DevisApiService {
     return this.http.patch<Devis>(
       `${this.baseUrl}/clients/${clientId}/demandes/${demandeId}/devis/demander-revision`,
       { motif },
+    );
+  }
+
+  // ---------- Professionnel ----------
+
+  // Le premier devis d'une demande acceptée
+  envoyer(proId: number, demandeId: number, lignes: LigneDevisSaisie[]) {
+    return this.http.post<Devis>(
+      `${this.baseUrl}/professionnels/${proId}/demandes/${demandeId}/devis`,
+      { lignes },
+    );
+  }
+
+  // Une nouvelle version, après une demande de révision du client
+  reviser(proId: number, demandeId: number, lignes: LigneDevisSaisie[]) {
+    return this.http.post<Devis>(
+      `${this.baseUrl}/professionnels/${proId}/demandes/${demandeId}/devis/revision`,
+      { lignes },
     );
   }
 }

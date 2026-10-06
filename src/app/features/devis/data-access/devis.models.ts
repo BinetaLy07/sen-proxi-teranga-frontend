@@ -31,3 +31,12 @@ export interface Devis {
   professionnelNom: string;
   lignes: LigneDevis[];
 }
+
+// Une ligne saisie par le professionnel (backend : LigneDevisRequest).
+// Le montant n'est pas envoyé : le serveur calcule quantité × prix unitaire.
+export interface LigneDevisSaisie {
+  type: TypeLigneDevis;
+  libelle: string;
+  quantite: number;
+  prixUnitaire: number;
+}

@@ -93,8 +93,10 @@ export const routes: Routes = [
         path: 'demandes-recues',
         title: 'Demandes reçues | Sen Proxi Teranga',
         canActivate: [roleGuard('PROFESSIONNEL')],
-        data: { titre: 'Demandes reçues' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/demandes/pages/demandes-recues/demandes-recues').then(
+            (m) => m.DemandesRecues,
+          ),
       },
       {
         path: 'mes-services',

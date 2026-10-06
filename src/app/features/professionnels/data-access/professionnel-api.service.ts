@@ -27,4 +27,11 @@ export class ProfessionnelApiService {
       `${this.baseUrl}/professionnels/${professionnelId}/profil`,
     );
   }
+
+  // Son propre profil, même s'il n'est pas encore validé (espace du pro)
+  monProfil(professionnelId: number) {
+    return this.http.get<ProfilProfessionnel>(
+      `${this.baseUrl}/professionnels/${professionnelId}/mon-profil`,
+    );
+  }
 }

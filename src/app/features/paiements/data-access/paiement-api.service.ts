@@ -53,4 +53,9 @@ export class PaiementApiService {
       {},
     );
   }
+
+  // Tous les paiements reçus par le pro (pour repérer ceux à confirmer)
+  listerPourPro(proId: number) {
+    return this.http.get<Paiement[]>(`${this.baseUrl}/professionnels/${proId}/paiements`);
+  }
 }

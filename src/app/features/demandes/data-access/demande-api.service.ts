@@ -50,4 +50,33 @@ export class DemandeApiService {
   fichierMedia(url: string) {
     return this.http.get(url, { responseType: 'blob' });
   }
+
+  // ---------- Professionnel ----------
+
+  // Les demandes reçues (les urgentes d'abord, puis les plus récentes)
+  listerPourPro(proId: number) {
+    return this.http.get<Demande[]>(`${this.baseUrl}/professionnels/${proId}/demandes`);
+  }
+
+  // fraisVisite : seulement si le client a demandé une visite (null = gratuite)
+  accepter(proId: number, demandeId: number, fraisVisite: number | null) {
+    return this.http.patch<Demande>(
+      `${this.baseUrl}/professionnels/${proId}/demandes/${demandeId}/accepter`,
+      fraisVisite != null ? { fraisVisite } : {},
+    );
+  }
+
+  refuser(proId: number, demandeId: number, motif: string) {
+    return this.http.patch<Demande>(
+      `${this.baseUrl}/professionnels/${proId}/demandes/${demandeId}/refuser`,
+      { motif },
+    );
+  }
+
+  annulerParPro(proId: number, demandeId: number, motif: string) {
+    return this.http.patch<Demande>(
+      `${this.baseUrl}/professionnels/${proId}/demandes/${demandeId}/annuler`,
+      { motif },
+    );
+  }
 }
