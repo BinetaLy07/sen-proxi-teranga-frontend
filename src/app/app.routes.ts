@@ -40,8 +40,7 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./shared/layouts/app-layout/app-layout').then((m) => m.AppLayout),
+    loadComponent: () => import('./shared/layouts/app-layout/app-layout').then((m) => m.AppLayout),
     children: [
       // Tous les rôles
       {
@@ -71,7 +70,15 @@ export const routes: Routes = [
         path: 'recherche',
         title: 'Trouver un pro | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT')],
-        data: { titre: 'Trouver un professionnel' },
+        loadComponent: () =>
+          import('./features/professionnels/pages/recherche/recherche').then((m) => m.Recherche),
+      },
+      {
+        // Provisoire : la page du profil arrive à l'étape F3-b
+        path: 'professionnels/:id',
+        title: 'Profil du professionnel | Sen Proxi Teranga',
+        canActivate: [roleGuard('CLIENT')],
+        data: { titre: 'Profil du professionnel' },
         loadComponent: aVenir,
       },
       {

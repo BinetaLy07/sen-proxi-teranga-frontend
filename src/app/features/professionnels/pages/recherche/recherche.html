@@ -1,0 +1,165 @@
+<p class="eyebrow">TROUVER UN PRO</p>
+<h1 class="page-title">Qui peut vous aider ?</h1>
+<p class="page-description">
+  Seuls les professionnels vérifiés par l'administrateur apparaissent ici.
+</p>
+
+<!-- Les filtres -->
+<form
+  [formGroup]="form"
+  (ngSubmit)="rechercher()"
+  class="mt-8 grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
+  novalidate
+>
+  <div>
+    <label for="metier">Métier</label>
+    <input id="metier" formControlName="metier" placeholder="Ex. : plombier" />
+  </div>
+  <div>
+    <label for="categorie">Catégorie</label>
+    <select
+      id="categorie"
+      formControlName="categorieId"
+      class="h-12 w-full rounded-lg border border-gray-300 bg-white px-3 text-base"
+    >
+      <option value="">Toutes les catégories</option>
+      @for (categorie of categories(); track categorie.id) {
+        <option [value]="categorie.id">{{ categorie.nom }}</option>
+      }
+    </select>
+  </div>
+  <div>
+    <label for="zone">Quartier ou commune</label>
+    <select
+      id="zone"
+      formControlName="zoneId"
+      class="h-12 w-full rounded-lg border border-gray-300 bg-white px-3 text-base"
+    >
+      <option value="">Tout Dakar</option>
+      @if (communes().length > 0) {
+        <optgroup label="Communes">
+          @for (zone of communes(); track zone.id) {
+            <option [value]="zone.id">{{ zone.nom }}</option>
+          }
+        </optgroup>
+      }
+      @if (quartiers().length > 0) {
+        <optgroup label="Quartiers">
+          @for (zone of quartiers(); track zone.id) {
+            <option [value]="zone.id">{{ zone.nom }} ({{ zone.communeNom }})</option>
+          }
+        </optgroup>
+      }
+    </select>
+  </div>
+  <div class="flex gap-2">
+    <button class="primary-button flex-1" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Recherche…' : 'Rechercher' }}
+    </button>
+    <button class="secondary-button" type="button" (click)="effacerFiltres()">Effacer</button>
+  </div>
+</form>
+
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+
+<!-- Le nombre de résultats -->
+@if (!loading() && !error()) {
+  <p class="mt-8 text-sm text-gray-600" role="status">
+    <strong class="text-gray-900">{{ resultats().length }}</strong>
+    {{ resultats().length > 1 ? 'professionnels trouvés' : 'professionnel trouvé' }}
+  </p>
+}
+
+<!-- Aucun résultat -->
+@if (!loading() && !error() && resultats().length === 0) {
+  <div class="mt-4 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
+    <p class="font-medium text-gray-900">Aucun professionnel ne correspond.</p>
+    <p class="mt-1 text-sm text-gray-500">Essayez un autre quartier ou retirez un filtre.</p>
+  </div>
+}
+
+<!-- Les cartes -->
+<div class="mt-4 grid gap-5 md:grid-cols-2">
+  @for (pro of resultats(); track pro.id) {
+    <article class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5">
+      <div class="flex items-start gap-4">
+        @if (pro.photoUrl) {
+          <img
+            [src]="pro.photoUrl"
+            [alt]="'Photo de ' + pro.nomComplet"
+            class="size-14 shrink-0 rounded-full object-cover"
+          />
+        } @else {
+          <span
+            class="flex size-14 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-lg font-bold text-brand-500"
+            aria-hidden="true"
+            >{{ initiales(pro.nomComplet) }}</span
+          >
+        }
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg font-semibold text-gray-900">
+              {{ pro.nomComplet }}
+            </h2>
+            <span
+              class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+              >✓ Vérifié</span
+            >
+          </div>
+          <p class="mt-1 text-sm text-gray-600">
+            {{ pro.metier }}
+            @if (pro.experience) {
+              · {{ pro.experience }} an{{ pro.experience > 1 ? 's' : '' }} d'expérience
+            }
+          </p>
+          @if (pro.zones.length > 0) {
+            <p class="mt-1 flex items-center gap-1 text-sm text-gray-500">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"></path>
+                <circle cx="12" cy="10" r="2.5"></circle>
+              </svg>
+              {{ pro.zones.join(', ') }}
+            </p>
+          }
+        </div>
+      </div>
+
+      <p class="text-sm text-gray-600">
+        @if (pro.nombreAvis > 0) {
+          <span class="text-amber-500" aria-hidden="true">★</span>
+          <strong class="text-gray-900">{{ note(pro.noteMoyenne) }}</strong>
+          · {{ pro.nombreAvis }} avis
+        } @else {
+          Nouveau sur Sen Proxi Teranga · pas encore d'avis
+        }
+      </p>
+
+      @if (pro.description) {
+        <p class="line-clamp-2 text-sm leading-relaxed text-gray-600">
+          {{ pro.description }}
+        </p>
+      }
+
+      <div class="mt-auto border-t border-gray-100 pt-4">
+        <a [routerLink]="['/professionnels', pro.id]" class="primary-button w-full"
+          >Voir le profil <span aria-hidden="true">→</span></a
+        >
+      </div>
+    </article>
+  }
+</div>
+
+<div class="notice mt-8">
+  <strong>Besoin urgent ?</strong> Dans votre demande, cochez « Urgent » : le professionnel est
+  prévenu par SMS et a 2 heures pour vous répondre.
+</div>
