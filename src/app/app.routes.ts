@@ -74,12 +74,11 @@ export const routes: Routes = [
           import('./features/professionnels/pages/recherche/recherche').then((m) => m.Recherche),
       },
       {
-        // Provisoire : la page du profil arrive à l'étape F3-b
         path: 'professionnels/:id',
         title: 'Profil du professionnel | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT')],
-        data: { titre: 'Profil du professionnel' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/professionnels/pages/profil/profil').then((m) => m.Profil),
       },
       {
         path: 'mes-demandes',
