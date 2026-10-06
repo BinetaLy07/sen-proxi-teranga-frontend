@@ -102,15 +102,15 @@ export const routes: Routes = [
         path: 'mes-services',
         title: 'Mes services | Sen Proxi Teranga',
         canActivate: [roleGuard('PROFESSIONNEL')],
-        data: { titre: 'Mes services' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/services/pages/mes-services/mes-services').then((m) => m.MesServices),
       },
       {
         path: 'mon-profil',
         title: 'Mon profil | Sen Proxi Teranga',
         canActivate: [roleGuard('PROFESSIONNEL')],
-        data: { titre: 'Mon profil professionnel' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/professionnels/pages/mon-profil/mon-profil').then((m) => m.MonProfil),
       },
 
       // Administrateur

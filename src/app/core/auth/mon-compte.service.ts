@@ -15,6 +15,9 @@ export interface MonCompte {
   // Seulement pour un professionnel (null sinon)
   statutVerification: 'EN_ATTENTE' | 'VALIDE' | 'CORRECTION_DEMANDEE' | 'REFUSE' | null;
   motifVerification: string | null;
+  // Seulement pour un professionnel (pour pré-remplir son profil)
+  whatsapp: string | null;
+  alerteSmsActive: boolean | null;
   adresse: string | null;
   zoneId: number | null;
   zoneNom: string | null;

@@ -79,3 +79,13 @@ export interface FiltresRecherche {
   categorieId: number | null;
   zoneId: number | null;
 }
+
+// Ce que le pro modifie dans son profil (backend : ModifierProfilRequest).
+// Attention : le backend remplace TOUS ces champs, il faut donc renvoyer les valeurs actuelles.
+export interface ModifierProfil {
+  description: string | null;
+  competences: string | null; // séparées par des virgules : "Fuites, Chauffe-eau"
+  experience: number | null;
+  whatsapp: string | null;
+  alerteSmsActive: boolean;
+}
