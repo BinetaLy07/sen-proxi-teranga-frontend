@@ -20,13 +20,13 @@
         <a
           [routerLink]="lien.chemin"
           routerLinkActive="!border-brand-500 !text-brand-500"
-          [routerLinkActiveOptions]="{ exact: true }"
+          [routerLinkActiveOptions]="optionsLienActif"
           class="whitespace-nowrap border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-600 hover:text-gray-900"
           >{{ lien.libelle }}
           @if (nombre(lien) > 0) {
             <span
               class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
-              >{{ nombre(lien) }}<span class="sr-only"> non lus</span></span
+              >{{ nombre(lien) }}<span class="sr-only"> {{ texteCompteur(lien) }}</span></span
             >
           }
         </a>

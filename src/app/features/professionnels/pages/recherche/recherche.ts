@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { apiError } from '../../../../core/http/api-error';
 import { Categorie } from '../../../categories/data-access/categorie.models';
@@ -48,7 +48,14 @@ export class Recherche {
       next: (liste) => this.zones.set(liste),
       error: () => this.zones.set([]),
     });
-    // Au départ : tous les professionnels
+    // Filtres reçus dans l'adresse (depuis l'accueil) : /recherche?metier=plombier&zoneId=3
+    const q = inject(ActivatedRoute).snapshot.queryParamMap;
+    this.form.patchValue({
+      metier: q.get('metier') ?? '',
+      categorieId: q.get('categorieId') ?? '',
+      zoneId: q.get('zoneId') ?? '',
+    });
+    // Au départ : tous les professionnels (ou ceux des filtres reçus)
     this.rechercher();
   }
 

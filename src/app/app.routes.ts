@@ -2,11 +2,14 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
 
-// Écran provisoire « Bientôt disponible » : chaque page le remplacera (F2, F3, F4…)
-const aVenir = () => import('./features/a-venir/a-venir').then((m) => m.AVenir);
-
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'connexion' },
+  // 0. La page d'accueil publique (avec sa propre mise en page)
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'Sen Proxi Teranga | Services de proximité',
+    loadComponent: () => import('./features/accueil/accueil').then((m) => m.Accueil),
+  },
 
   // 1. Pages publiques (mise en page AuthLayout) : connexion, inscription, mot de passe oublié
   {
@@ -83,6 +86,13 @@ export const routes: Routes = [
           import('./features/professionnels/pages/profil/profil').then((m) => m.Profil),
       },
       {
+        path: 'favoris',
+        title: 'Mes favoris | Sen Proxi Teranga',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () =>
+          import('./features/favoris/pages/mes-favoris/mes-favoris').then((m) => m.MesFavoris),
+      },
+      {
         path: 'mes-demandes',
         title: 'Mes demandes | Sen Proxi Teranga',
         canActivate: [roleGuard('CLIENT')],
@@ -120,22 +130,33 @@ export const routes: Routes = [
         path: 'admin',
         title: 'Tableau de bord | Sen Proxi Teranga',
         canActivate: [roleGuard('ADMINISTRATEUR')],
-        data: { titre: 'Tableau de bord' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/admin/pages/tableau-de-bord/tableau-de-bord').then(
+            (m) => m.TableauDeBord,
+          ),
       },
       {
         path: 'admin/professionnels',
         title: 'Professionnels | Sen Proxi Teranga',
         canActivate: [roleGuard('ADMINISTRATEUR')],
-        data: { titre: 'Vérification des professionnels' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/admin/pages/verification-pros/verification-pros').then(
+            (m) => m.VerificationPros,
+          ),
       },
       {
         path: 'admin/litiges',
         title: 'Litiges | Sen Proxi Teranga',
         canActivate: [roleGuard('ADMINISTRATEUR')],
-        data: { titre: 'Litiges' },
-        loadComponent: aVenir,
+        loadComponent: () =>
+          import('./features/admin/pages/litiges/litiges').then((m) => m.Litiges),
+      },
+      {
+        path: 'admin/comptes',
+        title: 'Comptes | Sen Proxi Teranga',
+        canActivate: [roleGuard('ADMINISTRATEUR')],
+        loadComponent: () =>
+          import('./features/admin/pages/comptes/comptes').then((m) => m.Comptes),
       },
     ],
   },
@@ -147,6 +168,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/legal/terms').then((m) => m.Terms),
   },
 
-  // Adresse inconnue => retour à la connexion
-  { path: '**', redirectTo: 'connexion' },
+  // Adresse inconnue => retour à l'accueil
+  { path: '**', redirectTo: '' },
 ];

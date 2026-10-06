@@ -12,6 +12,8 @@ export class Login {
   readonly registered = this.params.get('inscription') === 'ok';
   // Retour de « Mot de passe oublié » : le mot de passe vient d'être changé
   readonly reinitialise = this.params.get('reinitialisation') === 'ok';
+  // Page demandée avant la connexion (posée par authGuard), ex : "/recherche?metier=plombier"
+  private readonly retour = this.params.get('retour');
   readonly form = inject(FormBuilder).nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     motDePasse: ['', Validators.required],
@@ -35,7 +37,9 @@ export class Login {
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: () => {
-          void this.router.navigate(['/espace']);
+          // Sécurité : on n'accepte qu'une adresse interne ("/…", jamais "//autre-site")
+          const interne = this.retour?.startsWith('/') && !this.retour.startsWith('//');
+          void this.router.navigateByUrl(interne && this.retour ? this.retour : '/espace');
         },
         error: (error) => this.error.set(apiError(error)),
       });

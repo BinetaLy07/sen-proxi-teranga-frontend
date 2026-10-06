@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiError } from '../../../core/http/api-error';
@@ -39,6 +39,12 @@ export class Register {
           : { mismatch: true },
     },
   );
+  constructor() {
+    // Bouton « Créer mon profil professionnel » de l'accueil : /inscription?role=PROFESSIONNEL
+    if (inject(ActivatedRoute).snapshot.queryParamMap.get('role') === 'PROFESSIONNEL') {
+      this.selectRole('PROFESSIONNEL');
+    }
+  }
   selectRole(role: 'CLIENT' | 'PROFESSIONNEL') {
     this.role.set(role);
     const c = this.form.controls.metier;

@@ -1,6 +1,13 @@
 import { Component, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  IsActiveMatchOptions,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { filter, interval, merge, startWith } from 'rxjs';
 import { Role } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -10,7 +17,7 @@ interface LienMenu {
   libelle: string;
   chemin: string;
   // Pour afficher le petit chiffre rouge à côté du lien
-  compteur?: 'messages' | 'notifications';
+  compteur?: 'messages' | 'notifications' | 'pros' | 'litiges';
 }
 
 // Le menu de chaque rôle
@@ -18,6 +25,7 @@ const MENUS: Record<Role, LienMenu[]> = {
   CLIENT: [
     { libelle: 'Trouver un pro', chemin: '/recherche' },
     { libelle: 'Mes demandes', chemin: '/mes-demandes' },
+    { libelle: 'Mes favoris', chemin: '/favoris' },
     { libelle: 'Messages', chemin: '/messages', compteur: 'messages' },
     { libelle: 'Notifications', chemin: '/notifications', compteur: 'notifications' },
     { libelle: 'Mon compte', chemin: '/espace' },
@@ -32,8 +40,9 @@ const MENUS: Record<Role, LienMenu[]> = {
   ],
   ADMINISTRATEUR: [
     { libelle: 'Tableau de bord', chemin: '/admin' },
-    { libelle: 'Professionnels', chemin: '/admin/professionnels' },
-    { libelle: 'Litiges', chemin: '/admin/litiges' },
+    { libelle: 'Professionnels', chemin: '/admin/professionnels', compteur: 'pros' },
+    { libelle: 'Litiges', chemin: '/admin/litiges', compteur: 'litiges' },
+    { libelle: 'Comptes', chemin: '/admin/comptes' },
     { libelle: 'Mon compte', chemin: '/espace' },
   ],
 };
@@ -54,6 +63,15 @@ export class AppLayout {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly compteurs = inject(CompteursService);
+
+  // Le lien du menu est souligné si le chemin est exactement le sien,
+  // même avec des paramètres en plus (ex : /mes-demandes?demande=18)
+  readonly optionsLienActif: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
 
   // computed : se recalcule tout seul si la session change
   readonly liens = computed(() => {
@@ -77,7 +95,14 @@ export class AppLayout {
   nombre(lien: LienMenu) {
     if (lien.compteur === 'messages') return this.compteurs.messagesNonLus();
     if (lien.compteur === 'notifications') return this.compteurs.notificationsNonLues();
+    if (lien.compteur === 'pros') return this.compteurs.prosEnAttente();
+    if (lien.compteur === 'litiges') return this.compteurs.litigesOuverts();
     return 0;
+  }
+
+  // Pour les lecteurs d'écran : « 3 non lus » ou « 2 à traiter »
+  texteCompteur(lien: LienMenu) {
+    return lien.compteur === 'pros' || lien.compteur === 'litiges' ? 'à traiter' : 'non lus';
   }
 
   deconnecter() {
