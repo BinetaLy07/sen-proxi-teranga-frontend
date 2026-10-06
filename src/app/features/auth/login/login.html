@@ -6,6 +6,11 @@
     Votre compte est créé. Vous pouvez maintenant vous connecter.
   </div>
 }
+@if (reinitialise) {
+  <div class="notice success" role="status">
+    Votre mot de passe a été changé. Connectez-vous avec le nouveau.
+  </div>
+}
 @if (error()) {
   <div class="notice error" role="alert">{{ error() }}</div>
 }
@@ -53,6 +58,9 @@
     @if (invalid('motDePasse')) {
       <p id="password-error" class="field-error">Le mot de passe est obligatoire.</p>
     }
+    <div class="mt-2 text-right">
+      <a routerLink="/mot-de-passe-oublie" class="text-link text-sm">Mot de passe oublié ?</a>
+    </div>
   </div>
   <button class="primary-button w-full" type="submit" [disabled]="busy()">
     {{ busy() ? 'Connexion en cours…' : 'Se connecter' }} <span aria-hidden="true">→</span>

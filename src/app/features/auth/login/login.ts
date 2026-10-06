@@ -8,7 +8,10 @@ import { apiError } from '../../../core/http/api-error';
 export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  readonly registered = inject(ActivatedRoute).snapshot.queryParamMap.get('inscription') === 'ok';
+  private readonly params = inject(ActivatedRoute).snapshot.queryParamMap;
+  readonly registered = this.params.get('inscription') === 'ok';
+  // Retour de « Mot de passe oublié » : le mot de passe vient d'être changé
+  readonly reinitialise = this.params.get('reinitialisation') === 'ok';
   readonly form = inject(FormBuilder).nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     motDePasse: ['', Validators.required],

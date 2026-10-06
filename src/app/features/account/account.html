@@ -1,17 +1,225 @@
 <p class="eyebrow">VOTRE ESPACE PERSONNEL</p>
-<h1 class="page-title">Bienvenue dans le quartier.</h1>
-<p class="page-description">
-  Votre compte
-  {{
-    auth.session()?.role === 'PROFESSIONNEL'
-      ? 'professionnel'
-      : auth.session()?.role === 'ADMINISTRATEUR'
-        ? 'administrateur'
-        : 'client'
-  }}
-  est connecté.
-</p>
+<h1 class="page-title">
+  {{ compte() ? 'Bonjour ' + compte()!.prenom + '.' : 'Bienvenue dans le quartier.' }}
+</h1>
+<p class="page-description">Votre compte {{ libelleRole() }} est connecté.</p>
+
+<!-- Professionnel : où en est la vérification de son profil ? -->
+@if (compte()?.statutVerification === 'EN_ATTENTE') {
+  <div class="notice" role="status">
+    Votre profil est en attente de vérification par l'administrateur. Vous apparaîtrez dans les
+    recherches dès qu'il sera validé.
+  </div>
+}
+@if (compte()?.statutVerification === 'CORRECTION_DEMANDEE') {
+  <div class="notice" role="status">
+    <strong>Correction demandée :</strong> {{ compte()?.motifVerification }}
+  </div>
+}
+@if (compte()?.statutVerification === 'REFUSE') {
+  <div class="notice error" role="status">
+    <strong>Profil refusé :</strong> {{ compte()?.motifVerification }}
+  </div>
+}
+
+<!-- 1. Mes informations -->
 <section class="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 class="text-xl font-semibold">Mes informations</h2>
+    @if (compte() && !edition()) {
+      <button class="secondary-button" (click)="modifierInfos()">Modifier</button>
+    }
+  </div>
+  @if (infosSuccess()) {
+    <div class="notice success" role="status">{{ infosSuccess() }}</div>
+  }
+  @if (infosError()) {
+    <div class="notice error" role="alert">{{ infosError() }}</div>
+  }
+
+  @if (!compte() && !infosError()) {
+    <p class="py-6" role="status">Chargement de vos informations…</p>
+  }
+
+  @if (compte(); as c) {
+    @if (!edition()) {
+      <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="text-gray-500">Nom complet</dt>
+          <dd class="mt-1 font-medium text-gray-900">{{ c.prenom }} {{ c.nom }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Email (sert à se connecter)</dt>
+          <dd class="mt-1 font-medium text-gray-900">{{ c.email }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Téléphone</dt>
+          <dd class="mt-1 font-medium text-gray-900">{{ c.telephone }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Adresse</dt>
+          <dd class="mt-1 font-medium text-gray-900">{{ c.adresse || 'Non renseignée' }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Quartier</dt>
+          <dd class="mt-1 font-medium text-gray-900">{{ c.zoneNom || 'Non renseigné' }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Membre depuis le</dt>
+          <dd class="mt-1 font-medium text-gray-900">{{ c.dateInscription | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+      </dl>
+    } @else {
+      <form
+        [formGroup]="formInfos"
+        (ngSubmit)="enregistrerInfos()"
+        class="mt-5 space-y-4"
+        [attr.aria-busy]="infosBusy()"
+        novalidate
+      >
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="prenom">Prénom <span class="required">*</span></label
+            ><input
+              id="prenom"
+              formControlName="prenom"
+              autocomplete="given-name"
+              [attr.aria-invalid]="infoInvalide('prenom')"
+            />
+            @if (infoInvalide('prenom')) {
+              <p class="field-error">Votre prénom est obligatoire.</p>
+            }
+          </div>
+          <div>
+            <label for="nom">Nom <span class="required">*</span></label
+            ><input
+              id="nom"
+              formControlName="nom"
+              autocomplete="family-name"
+              [attr.aria-invalid]="infoInvalide('nom')"
+            />
+            @if (infoInvalide('nom')) {
+              <p class="field-error">Votre nom est obligatoire.</p>
+            }
+          </div>
+        </div>
+        <div>
+          <label for="telephone">Téléphone <span class="required">*</span></label
+          ><input
+            id="telephone"
+            type="tel"
+            formControlName="telephone"
+            autocomplete="tel"
+            [attr.aria-invalid]="infoInvalide('telephone')"
+          />
+          @if (infoInvalide('telephone')) {
+            <p class="field-error">Saisissez un numéro sénégalais valide, avec ou sans +221.</p>
+          }
+        </div>
+        <div>
+          <label for="adresse">Adresse</label
+          ><input
+            id="adresse"
+            formControlName="adresse"
+            autocomplete="street-address"
+            placeholder="Ex. : Liberté 6, près de la pharmacie"
+            [attr.aria-invalid]="infoInvalide('adresse')"
+          />
+          @if (infoInvalide('adresse')) {
+            <p class="field-error">255 caractères maximum.</p>
+          }
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button class="primary-button" type="submit" [disabled]="infosBusy()">
+            {{ infosBusy() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+          <button class="secondary-button" type="button" (click)="annulerInfos()">Annuler</button>
+        </div>
+      </form>
+    }
+  }
+</section>
+
+<!-- 2. Changer mon mot de passe -->
+<section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+  <h2 class="text-xl font-semibold">Changer mon mot de passe</h2>
+  <p class="mt-2 text-sm text-gray-500">
+    Vos autres connexions seront fermées. Celle-ci reste ouverte.
+  </p>
+  @if (mdpSuccess()) {
+    <div class="notice success" role="status">{{ mdpSuccess() }}</div>
+  }
+  @if (mdpError()) {
+    <div class="notice error" role="alert">{{ mdpError() }}</div>
+  }
+  <form
+    [formGroup]="formMdp"
+    (ngSubmit)="changerMotDePasse()"
+    class="mt-5 space-y-4"
+    [attr.aria-busy]="mdpBusy()"
+    novalidate
+  >
+    <div>
+      <label for="ancien">Mot de passe actuel <span class="required">*</span></label
+      ><input
+        id="ancien"
+        type="password"
+        formControlName="ancienMotDePasse"
+        autocomplete="current-password"
+        [attr.aria-invalid]="mdpInvalide('ancienMotDePasse')"
+      />
+      @if (mdpInvalide('ancienMotDePasse')) {
+        <p class="field-error">Saisissez votre mot de passe actuel.</p>
+      }
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="nouveau">Nouveau mot de passe <span class="required">*</span></label>
+        <div class="password-field">
+          <input
+            id="nouveau"
+            [type]="mdpVisible() ? 'text' : 'password'"
+            formControlName="nouveauMotDePasse"
+            autocomplete="new-password"
+            placeholder="8 caractères minimum"
+            [attr.aria-invalid]="mdpInvalide('nouveauMotDePasse')"
+          /><button
+            type="button"
+            (click)="mdpVisible.set(!mdpVisible())"
+            [attr.aria-label]="mdpVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            {{ mdpVisible() ? 'Masquer' : 'Voir' }}
+          </button>
+        </div>
+        @if (mdpInvalide('nouveauMotDePasse')) {
+          <p class="field-error">Utilisez de 8 à 72 caractères (72 octets maximum).</p>
+        }
+      </div>
+      <div>
+        <label for="confirmation">Confirmer <span class="required">*</span></label
+        ><input
+          id="confirmation"
+          type="password"
+          formControlName="confirmation"
+          autocomplete="new-password"
+          [attr.aria-invalid]="formMdp.controls.confirmation.touched && formMdp.hasError('mismatch')"
+        />
+        @if (
+          formMdp.controls.confirmation.touched &&
+          (mdpInvalide('confirmation') || formMdp.hasError('mismatch'))
+        ) {
+          <p class="field-error">Les mots de passe doivent être identiques.</p>
+        }
+      </div>
+    </div>
+    <button class="primary-button" type="submit" [disabled]="mdpBusy()">
+      {{ mdpBusy() ? 'Enregistrement…' : 'Changer mon mot de passe' }}
+    </button>
+  </form>
+</section>
+
+<!-- 3. Mes sessions (travail de l'encadreur) -->
+<section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
   <h2 class="text-xl font-semibold">Vos sessions</h2>
   <p class="mt-2 text-sm text-gray-500">Gardez le contrôle des connexions à votre compte.</p>
   @if (error()) {

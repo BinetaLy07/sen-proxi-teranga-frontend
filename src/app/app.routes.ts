@@ -8,7 +8,7 @@ const aVenir = () => import('./features/a-venir/a-venir').then((m) => m.AVenir);
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'connexion' },
 
-  // 1. Pages publiques (mise en page AuthLayout) : connexion et inscription
+  // 1. Pages publiques (mise en page AuthLayout) : connexion, inscription, mot de passe oublié
   {
     path: '',
     loadComponent: () =>
@@ -23,6 +23,14 @@ export const routes: Routes = [
         path: 'inscription',
         title: 'Créer un compte | Sen Proxi Teranga',
         loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
+      },
+      {
+        path: 'mot-de-passe-oublie',
+        title: 'Mot de passe oublié | Sen Proxi Teranga',
+        loadComponent: () =>
+          import('./features/auth/mot-de-passe-oublie/mot-de-passe-oublie').then(
+            (m) => m.MotDePasseOublie,
+          ),
       },
     ],
   },

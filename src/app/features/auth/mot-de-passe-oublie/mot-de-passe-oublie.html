@@ -1,0 +1,128 @@
+<p class="eyebrow">MOT DE PASSE OUBLIÉ</p>
+@if (etape() === 'telephone') {
+  <h1 class="page-title">Retrouvez votre compte.</h1>
+  <p class="page-description">
+    Saisissez le numéro de téléphone de votre compte : nous vous envoyons un code par SMS.
+  </p>
+} @else {
+  <h1 class="page-title">Nouveau mot de passe.</h1>
+  <p class="page-description">Saisissez le code à 6 chiffres reçu par SMS au {{ telephone() }}.</p>
+}
+@if (info() && etape() === 'code') {
+  <div class="notice success" role="status">{{ info() }}</div>
+}
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+
+@if (etape() === 'telephone') {
+  <form
+    [formGroup]="formTelephone"
+    (ngSubmit)="envoyerCode()"
+    class="mt-8 space-y-5"
+    [attr.aria-busy]="busy()"
+    novalidate
+  >
+    <div>
+      <label for="telephone">Téléphone <span class="required">*</span></label
+      ><input
+        id="telephone"
+        type="tel"
+        formControlName="telephone"
+        autocomplete="tel"
+        placeholder="771234567"
+        [attr.aria-invalid]="telephoneInvalide()"
+        aria-describedby="telephone-error"
+      />
+      @if (telephoneInvalide()) {
+        <p id="telephone-error" class="field-error">
+          Saisissez un numéro sénégalais valide, avec ou sans +221.
+        </p>
+      }
+    </div>
+    <button class="primary-button w-full" type="submit" [disabled]="busy()">
+      {{ busy() ? 'Envoi en cours…' : 'Recevoir un code par SMS' }}
+      <span aria-hidden="true">→</span>
+    </button>
+  </form>
+} @else {
+  <form
+    [formGroup]="formCode"
+    (ngSubmit)="reinitialiser()"
+    class="mt-8 space-y-5"
+    [attr.aria-busy]="busy()"
+    novalidate
+  >
+    <div>
+      <label for="code">Code reçu par SMS <span class="required">*</span></label
+      ><input
+        id="code"
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        formControlName="code"
+        autocomplete="one-time-code"
+        placeholder="6 chiffres"
+        [attr.aria-invalid]="invalid('code')"
+        aria-describedby="code-error"
+      />
+      @if (invalid('code')) {
+        <p id="code-error" class="field-error">Le code contient 6 chiffres.</p>
+      }
+    </div>
+    <div>
+      <label for="password">Nouveau mot de passe <span class="required">*</span></label>
+      <div class="password-field">
+        <input
+          id="password"
+          [type]="visible() ? 'text' : 'password'"
+          formControlName="nouveauMotDePasse"
+          autocomplete="new-password"
+          placeholder="8 caractères minimum"
+          [attr.aria-invalid]="invalid('nouveauMotDePasse')"
+        /><button
+          type="button"
+          (click)="visible.set(!visible())"
+          [attr.aria-label]="visible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+        >
+          {{ visible() ? 'Masquer' : 'Voir' }}
+        </button>
+      </div>
+      @if (invalid('nouveauMotDePasse')) {
+        <p class="field-error">Utilisez de 8 à 72 caractères (72 octets maximum).</p>
+      }
+    </div>
+    <div>
+      <label for="confirmation">Confirmer le mot de passe <span class="required">*</span></label
+      ><input
+        id="confirmation"
+        type="password"
+        formControlName="confirmation"
+        autocomplete="new-password"
+        placeholder="Saisissez à nouveau le mot de passe"
+        [attr.aria-invalid]="formCode.controls.confirmation.touched && formCode.hasError('mismatch')"
+      />
+      @if (
+        formCode.controls.confirmation.touched &&
+        (invalid('confirmation') || formCode.hasError('mismatch'))
+      ) {
+        <p class="field-error">Les mots de passe doivent être identiques.</p>
+      }
+    </div>
+    <button class="primary-button w-full" type="submit" [disabled]="busy()">
+      {{ busy() ? 'Enregistrement…' : 'Changer mon mot de passe' }}
+      <span aria-hidden="true">→</span>
+    </button>
+  </form>
+  <div class="mt-5 flex flex-wrap justify-between gap-3 text-sm">
+    <button type="button" class="text-link py-2" (click)="envoyerCode()" [disabled]="busy()">
+      Renvoyer le code
+    </button>
+    <button type="button" class="text-link py-2" (click)="changerNumero()">
+      Changer de numéro
+    </button>
+  </div>
+}
+<p class="mt-7 text-sm text-gray-500">
+  Vous vous en souvenez ? <a routerLink="/connexion" class="text-link">Se connecter</a>
+</p>
