@@ -1,0 +1,185 @@
+<p class="eyebrow">ADMINISTRATION</p>
+<h1 class="page-title">Tableau de bord</h1>
+
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+@if (loading()) {
+  <p class="py-10" role="status">Chargement du tableau de bord…</p>
+}
+
+@if (stats(); as s) {
+  <p class="page-description">
+    La plateforme en un coup d'œil.
+    @if (s.professionnelsEnAttente === 0 && s.demandesEnLitige === 0) {
+      Rien à traiter pour le moment.
+    } @else {
+      Vous avez {{ pluriel(s.professionnelsEnAttente, 'profil') }} à vérifier et
+      {{ pluriel(s.demandesEnLitige, 'litige') }} à trancher.
+    }
+  </p>
+
+  <!-- ===== Les chiffres clés ===== -->
+  <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Clients</p>
+      <p class="mt-1 text-3xl font-bold text-gray-900">{{ s.nombreClients }}</p>
+      <p class="mt-1 text-xs text-gray-500">
+        {{ pluriel(s.comptesSuspendus, 'compte') }} suspendu{{ s.comptesSuspendus > 1 ? 's' : '' }}
+        (tous rôles)
+      </p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Professionnels validés</p>
+      <p class="mt-1 text-3xl font-bold text-gray-900">{{ s.professionnelsValides }}</p>
+      <p class="mt-1 text-xs">
+        @if (s.professionnelsEnAttente > 0) {
+          <a routerLink="/admin/professionnels" class="font-semibold text-amber-700 hover:underline"
+            >{{ s.professionnelsEnAttente }} en attente →</a
+          >
+        } @else {
+          <span class="text-gray-500">sur {{ s.nombreProfessionnels }} inscrits</span>
+        }
+      </p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Demandes</p>
+      <p class="mt-1 text-3xl font-bold text-gray-900">{{ s.nombreDemandes }}</p>
+      <p class="mt-1 text-xs text-gray-500">
+        {{ s.demandesParStatut.CLOTUREE }} clôturée{{ s.demandesParStatut.CLOTUREE > 1 ? 's' : '' }}
+      </p>
+    </div>
+    <div
+      class="rounded-2xl border bg-white p-5"
+      [class]="s.demandesEnLitige > 0 ? 'border-red-200' : 'border-gray-200'"
+    >
+      <p class="text-sm text-gray-600">Litiges ouverts</p>
+      <p
+        class="mt-1 text-3xl font-bold"
+        [class]="s.demandesEnLitige > 0 ? 'text-red-700' : 'text-gray-900'"
+      >
+        {{ s.demandesEnLitige }}
+      </p>
+      <p class="mt-1 text-xs">
+        @if (s.demandesEnLitige > 0) {
+          <a routerLink="/admin/litiges" class="font-semibold text-red-700 hover:underline"
+            >Les examiner →</a
+          >
+        } @else {
+          <span class="text-gray-500">aucun paiement contesté</span>
+        }
+      </p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Paiements confirmés</p>
+      <p class="mt-1 text-2xl font-bold text-emerald-700">
+        {{ montant(s.montantPaiementsConfirmes) }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500">entre clients et pros</p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Avis laissés</p>
+      <p class="mt-1 text-3xl font-bold text-gray-900">{{ s.nombreAvis }}</p>
+      <p class="mt-1 text-xs text-gray-500">par les clients</p>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+    <!-- ===== À gauche : les demandes par étape ===== -->
+    <section class="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white p-6">
+      <h2 class="text-xl font-semibold text-gray-900">Demandes en cours, par étape</h2>
+      <p class="mt-1 text-sm text-gray-600">
+        {{ pluriel(totalEnCours(), 'demande') }} en cours de traitement
+      </p>
+
+      <div class="mt-5 flex flex-col gap-3 text-sm">
+        @for (e of etapes(); track e.statut) {
+          <div class="grid grid-cols-[7.5rem_minmax(0,1fr)_2.5rem] items-center gap-3">
+            <span class="text-gray-700">{{ e.libelle }}</span>
+            <span class="h-3 rounded-full bg-gray-100">
+              <span
+                class="block h-full rounded-full bg-brand-500"
+                [style.width.%]="e.largeur"
+              ></span>
+            </span>
+            <strong class="text-right text-gray-900">{{ e.nombre }}</strong>
+          </div>
+        }
+      </div>
+
+      <div class="mt-6 border-t border-gray-100 pt-5">
+        <p class="text-sm font-semibold text-gray-700">Demandes sorties du parcours</p>
+        <div class="mt-3 flex flex-wrap gap-2 text-sm">
+          @for (x of sorties(); track x.statut) {
+            <span class="rounded-full px-3 py-1.5" [class]="x.classes"
+              >{{ x.libelle }} · <strong>{{ x.nombre }}</strong></span
+            >
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== À droite : ce qui attend l'administrateur ===== -->
+    <div class="flex w-full flex-col gap-6 lg:w-96 lg:shrink-0">
+      <section class="rounded-2xl border border-gray-200 bg-white p-6">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-semibold text-gray-900">Profils à vérifier</h2>
+          <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-sm font-bold text-amber-700">{{
+            aVerifier().length
+          }}</span>
+        </div>
+        @for (p of aVerifier().slice(0, 5); track p.id) {
+          <div class="flex items-center gap-3 border-b border-gray-100 py-3 last:border-0">
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-sm font-bold text-orange-700"
+              aria-hidden="true"
+              >{{ initiales(p.nomComplet) }}</span
+            >
+            <span class="min-w-0 flex-1 text-sm">
+              <strong class="block text-gray-900">{{ p.nomComplet }}</strong>
+              <span class="text-gray-500"
+                >{{ p.metier }} · inscrit le {{ p.dateInscription | date: 'dd/MM' }}</span
+              >
+            </span>
+            <a
+              routerLink="/admin/professionnels"
+              [queryParams]="{ id: p.id }"
+              class="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-semibold text-brand-500"
+              >Examiner</a
+            >
+          </div>
+        } @empty {
+          <p class="mt-3 text-sm text-gray-500">Aucun profil en attente.</p>
+        }
+        @if (aVerifier().length > 5) {
+          <a routerLink="/admin/professionnels" class="text-link mt-3 inline-block text-sm"
+            >Voir les {{ aVerifier().length }} profils →</a
+          >
+        }
+      </section>
+
+      <section
+        class="rounded-2xl border bg-white p-6"
+        [class]="litiges().length > 0 ? 'border-red-200' : 'border-gray-200'"
+      >
+        <h2 class="text-lg font-semibold text-gray-900">Litiges à trancher</h2>
+        @for (d of litiges().slice(0, 3); track d.id) {
+          <div class="border-b border-gray-100 py-3 last:border-0">
+            <p class="font-semibold text-gray-900">{{ d.serviceTitre }}</p>
+            <p class="mt-1 text-sm text-gray-600">
+              Client : {{ d.clientNom }} · Pro : {{ d.professionnelNom }}
+            </p>
+            <a
+              routerLink="/admin/litiges"
+              [queryParams]="{ demande: d.id }"
+              class="text-link mt-1 inline-block text-sm"
+              >Examiner le dossier n° {{ d.id }} →</a
+            >
+          </div>
+        } @empty {
+          <p class="mt-3 text-sm text-gray-500">Aucun litige en cours.</p>
+        }
+      </section>
+    </div>
+  </div>
+}

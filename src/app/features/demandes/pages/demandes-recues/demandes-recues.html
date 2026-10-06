@@ -260,6 +260,13 @@
           }
         }
 
+        <!-- Après un litige : la décision de l'administrateur -->
+        @if (d.resolutionLitige) {
+          <div class="notice">
+            <strong>Décision de l'administrateur :</strong> {{ d.resolutionLitige }}
+          </div>
+        }
+
         @if (actionSuccess()) {
           <div class="notice success" role="status">{{ actionSuccess() }}</div>
         }

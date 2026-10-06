@@ -1,0 +1,112 @@
+<p class="eyebrow">COMPTES</p>
+<h1 class="page-title">Gérer les comptes</h1>
+<p class="page-description">
+  Suspendez un compte en cas d'abus : la personne est déconnectée et ne peut plus se connecter. Vous
+  pouvez le réactiver à tout moment.
+</p>
+
+<div class="mt-6 flex flex-wrap items-end justify-between gap-4">
+  <!-- Clients ou professionnels -->
+  <div class="flex gap-2" role="group" aria-label="Type de compte">
+    @for (r of listes; track r.cle) {
+      <button
+        type="button"
+        class="rounded-full border px-4 py-2 text-sm"
+        [class]="
+          role() === r.cle
+            ? 'border-gray-900 bg-gray-900 font-semibold text-white'
+            : 'border-gray-300 bg-white text-gray-700'
+        "
+        [attr.aria-pressed]="role() === r.cle"
+        (click)="afficher(r.cle)"
+      >
+        {{ r.libelle }}
+      </button>
+    }
+  </div>
+
+  <div class="w-full sm:w-80">
+    <label for="recherche-compte">Rechercher</label>
+    <input
+      id="recherche-compte"
+      type="search"
+      [formControl]="recherche"
+      placeholder="Nom, téléphone ou email"
+    />
+  </div>
+</div>
+
+@if (message()) {
+  <div class="notice success" role="status">{{ message() }}</div>
+}
+@if (error()) {
+  <div class="notice error" role="alert">{{ error() }}</div>
+}
+@if (loading()) {
+  <p class="py-10" role="status">Chargement des comptes…</p>
+}
+
+@if (!loading() && comptes().length > 0) {
+  <p class="mt-6 text-sm text-gray-600">
+    {{ comptes().length }} compte{{ comptes().length > 1 ? 's' : '' }}
+    @if (nombreSuspendus() > 0) {
+      ·
+      <strong class="text-red-700"
+        >{{ nombreSuspendus() }} suspendu{{ nombreSuspendus() > 1 ? 's' : '' }}</strong
+      >
+    }
+  </p>
+}
+
+@if (!loading()) {
+  <ul class="mt-3 flex flex-col gap-3">
+    @for (c of affiches(); track c.id) {
+      <li
+        class="flex flex-wrap items-center gap-4 rounded-xl border bg-white p-4"
+        [class]="c.statutCompte === 'SUSPENDU' ? 'border-red-200' : 'border-gray-200'"
+      >
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-gray-900">
+            {{ c.prenom }} {{ c.nom }}
+            @if (c.statutCompte === 'SUSPENDU') {
+              <span
+                class="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700"
+                >Suspendu</span
+              >
+            }
+            @if (c.statutVerification; as v) {
+              <span
+                class="ml-1 rounded-full border px-2 py-0.5 text-xs font-semibold"
+                [class]="etiquettes[v].classes"
+                >{{ etiquettes[v].libelle }}</span
+              >
+            }
+          </p>
+          <p class="mt-1 text-sm break-all text-gray-600">{{ c.telephone }} · {{ c.email }}</p>
+          <p class="mt-1 text-xs text-gray-500">
+            Inscrit le {{ c.dateInscription | date: 'dd/MM/yyyy' }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="secondary-button"
+          [class]="c.statutCompte === 'ACTIF' ? 'text-red-700' : 'text-emerald-700'"
+          (click)="changerStatut(c)"
+          [disabled]="busyId() !== null"
+        >
+          @if (busyId() === c.id) {
+            Un instant…
+          } @else {
+            {{ c.statutCompte === 'ACTIF' ? 'Suspendre' : 'Réactiver' }}
+          }
+        </button>
+      </li>
+    } @empty {
+      @if (!error()) {
+        <li class="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
+          <p class="font-medium text-gray-900">Aucun compte trouvé.</p>
+        </li>
+      }
+    }
+  </ul>
+}
