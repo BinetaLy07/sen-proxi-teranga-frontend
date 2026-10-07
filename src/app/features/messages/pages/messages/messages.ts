@@ -16,7 +16,10 @@ import { MessageApiService } from '../../data-access/message-api.service';
 export class Messages {
   private readonly api = inject(MessageApiService);
   private readonly compteurs = inject(CompteursService);
-  readonly moiId = inject(AuthService).session()?.utilisateurId ?? 0;
+  private readonly session = inject(AuthService).session();
+  readonly moiId = this.session?.utilisateurId ?? 0;
+  // Pour adapter le texte d'aide : un pro écrit à ses clients, un client écrit aux pros
+  readonly estPro = this.session?.role === 'PROFESSIONNEL';
 
   readonly conversations = signal<Conversation[]>([]);
   readonly interlocuteurId = signal<number | null>(null);
@@ -90,7 +93,10 @@ export class Messages {
     });
   }
 
-  envoyer() {
+  // Appelé par (submit) du formulaire : preventDefault() empêche le navigateur
+  // de recharger toute la page (son comportement normal quand on envoie un <form>)
+  envoyer(event?: Event) {
+    event?.preventDefault();
     const id = this.interlocuteurId();
     this.texte.markAsTouched();
     if (id === null || this.texte.invalid || this.busy()) return;
