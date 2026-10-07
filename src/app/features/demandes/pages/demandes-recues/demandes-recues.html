@@ -179,64 +179,52 @@
           </div>
         }
 
-        <h3 class="mt-5 font-semibold">Le besoin</h3>
-        <p class="mt-1 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
-        <app-photos-demande [demandeId]="d.id" />
-
-        <dl class="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt class="text-gray-500">Adresse</dt>
-            <dd class="font-medium text-gray-900">
-              {{ d.adresse }}
-              @if (d.zoneNom) {
-                ({{ d.zoneNom }})
-              }
-            </dd>
-          </div>
-          <div>
-            <dt class="text-gray-500">Date souhaitée</dt>
-            <dd class="font-medium text-gray-900">{{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}</dd>
-          </div>
-          <div>
-            <dt class="text-gray-500">Visite avant devis</dt>
-            <dd class="font-medium text-gray-900">
-              @if (d.visiteDemandee) {
-                Demandée
-                @if (d.fraisVisite !== null) {
-                  · {{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }}
-                }
-              } @else {
-                Non demandée
-              }
-            </dd>
-          </div>
-        </dl>
-
-        <!-- La frise des 9 étapes -->
-        @if (etape() >= 0) {
-          <ol class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-9">
-            @for (p of parcours; track p.statut; let i = $index) {
-              <li class="flex flex-col items-center gap-1 text-center">
-                <span
-                  class="flex size-8 items-center justify-center rounded-full text-sm font-semibold"
-                  [class]="
-                    i < etape()
-                      ? 'bg-brand-500 text-white'
-                      : i === etape()
-                        ? 'border-2 border-brand-500 bg-white text-brand-500'
-                        : 'bg-gray-100 text-gray-500'
-                  "
-                  >{{ i < etape() ? '✓' : i + 1 }}</span
-                >
-                <span
-                  class="text-xs"
-                  [class]="i === etape() ? 'font-bold text-brand-500' : 'text-gray-600'"
-                  >{{ p.libelle }}</span
-                >
-              </li>
-            }
-          </ol>
+        <!-- Où on en est (quand c'est au client d'agir) -->
+        @if (attente(); as phrase) {
+          <p class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-gray-700">
+            {{ phrase }}
+          </p>
         }
+
+        <!-- La discussion est dans la page Messages -->
+        <app-bouton-discussion [demande]="d" />
+
+        <!-- Le détail, replié (ouvert pour une nouvelle demande : il faut le lire pour répondre) -->
+        <details class="mt-4 border-t border-gray-100 pt-3" [open]="d.statut === 'CREEE'">
+          <summary class="text-link cursor-pointer text-sm">Voir le détail</summary>
+          <h3 class="mt-3 font-semibold">Le besoin</h3>
+          <p class="mt-1 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
+          <app-photos-demande [demandeId]="d.id" />
+
+          <dl class="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt class="text-gray-500">Adresse</dt>
+              <dd class="font-medium text-gray-900">
+                {{ d.adresse }}
+                @if (d.zoneNom) {
+                  ({{ d.zoneNom }})
+                }
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">Date souhaitée</dt>
+              <dd class="font-medium text-gray-900">{{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}</dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">Visite avant devis</dt>
+              <dd class="font-medium text-gray-900">
+                @if (d.visiteDemandee) {
+                  Demandée
+                  @if (d.fraisVisite !== null) {
+                    · {{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }}
+                  }
+                } @else {
+                  Non demandée
+                }
+              </dd>
+            </div>
+          </dl>
+        </details>
 
         @switch (d.statut) {
           @case ('REFUSEE') {
@@ -340,9 +328,6 @@
       <app-rendez-vous-pro [demande]="d" (actualise)="apresAction($event)" />
       <app-paiement-pro [demande]="d" (actualise)="apresAction($event)" />
       <app-avis-pro [demande]="d" (actualise)="apresAction($event)" />
-
-      <!-- La discussion avec le client : messages + actions automatiques -->
-      <app-discussion-demande [demande]="d" />
     </div>
   }
 </div>

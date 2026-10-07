@@ -15,8 +15,12 @@ import { PaiementPro } from '../../components-pro/paiement-pro/paiement-pro';
 import { RendezVousPro } from '../../components-pro/rendez-vous-pro/rendez-vous-pro';
 import { Demande, StatutDemande } from '../../data-access/demande.models';
 import { DemandeApiService } from '../../data-access/demande-api.service';
-import { ETIQUETTES_PRO, PARCOURS, STATUTS_ANNULABLES } from '../../data-access/demande-statuts';
-import { DiscussionDemande } from '../../components/discussion-demande/discussion-demande';
+import {
+  ETIQUETTES_PRO,
+  phraseAttente,
+  STATUTS_ANNULABLES,
+} from '../../data-access/demande-statuts';
+import { BoutonDiscussion } from '../../components/bouton-discussion/bouton-discussion';
 
 type Filtre = 'toutes' | 'nouvelles' | 'en-cours' | 'terminees' | 'autres';
 
@@ -42,7 +46,7 @@ const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
     RendezVousPro,
     PaiementPro,
     AvisPro,
-    DiscussionDemande,
+    BoutonDiscussion,
   ],
   templateUrl: './demandes-recues.html',
 })
@@ -52,7 +56,6 @@ export class DemandesRecues {
   private readonly professionnelApi = inject(ProfessionnelApiService);
   private readonly proId = inject(AuthService).session()?.utilisateurId ?? 0;
 
-  readonly parcours = PARCOURS;
   readonly etiquettes = ETIQUETTES_PRO;
 
   // ---------- En-tête : prénom, note, paiements à confirmer ----------
@@ -104,9 +107,10 @@ export class DemandesRecues {
   readonly selection = computed(
     () => this.demandes().find((d) => d.id === this.selectionId()) ?? null,
   );
-  readonly etape = computed(() => {
+  // La phrase « où on en est » (seulement quand c'est au client d'agir)
+  readonly attente = computed(() => {
     const d = this.selection();
-    return d ? this.parcours.findIndex((p) => p.statut === d.statut) : -1;
+    return d ? phraseAttente(d, 'PROFESSIONNEL') : null;
   });
   // Le pro peut annuler après avoir accepté (avant « En cours ») ; avant, il refuse
   readonly annulable = computed(() => {

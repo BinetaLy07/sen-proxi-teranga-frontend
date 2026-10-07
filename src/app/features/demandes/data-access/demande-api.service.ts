@@ -39,6 +39,11 @@ export class DemandeApiService {
     );
   }
 
+  // Une demande précise (pour le client ou le pro de la demande, ou l'admin)
+  detail(demandeId: number) {
+    return this.http.get<Demande>(`${this.baseUrl}/demandes/${demandeId}`);
+  }
+
   // La liste des photos / vidéos d'une demande
   listerMedias(demandeId: number) {
     return this.http.get<Media[]>(`${this.baseUrl}/demandes/${demandeId}/medias`);

@@ -74,43 +74,31 @@
               ({{ d.zoneNom }})
             }
           </p>
-          <p class="mt-4 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
-          <app-photos-demande [demandeId]="d.id" />
-          <p class="mt-3 text-sm text-gray-600">
-            Date souhaitée : <strong>{{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}</strong>
-            @if (d.visiteDemandee) {
-              · Visite demandée
-              @if (d.fraisVisite !== null) {
-                ({{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }})
-              }
-            }
-          </p>
-
-          <!-- La frise des 9 étapes (seulement pour le parcours normal) -->
-          @if (etape() >= 0) {
-            <ol class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-9">
-              @for (p of parcours; track p.statut; let i = $index) {
-                <li class="flex flex-col items-center gap-1 text-center">
-                  <span
-                    class="flex size-8 items-center justify-center rounded-full text-sm font-semibold"
-                    [class]="
-                      i < etape()
-                        ? 'bg-brand-500 text-white'
-                        : i === etape()
-                          ? 'border-2 border-brand-500 bg-white text-brand-500'
-                          : 'bg-gray-100 text-gray-500'
-                    "
-                    >{{ i < etape() ? '✓' : i + 1 }}</span
-                  >
-                  <span
-                    class="text-xs"
-                    [class]="i === etape() ? 'font-bold text-brand-500' : 'text-gray-600'"
-                    >{{ p.libelle }}</span
-                  >
-                </li>
-              }
-            </ol>
+          <!-- Où on en est (quand c'est à l'autre d'agir) -->
+          @if (attente(); as phrase) {
+            <p class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-gray-700">
+              {{ phrase }}
+            </p>
           }
+
+          <!-- La discussion est dans la page Messages -->
+          <app-bouton-discussion [demande]="d" />
+
+          <!-- Le détail, replié -->
+          <details class="mt-4 border-t border-gray-100 pt-3">
+            <summary class="text-link cursor-pointer text-sm">Voir le détail</summary>
+            <p class="mt-4 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
+            <app-photos-demande [demandeId]="d.id" />
+            <p class="mt-3 text-sm text-gray-600">
+              Date souhaitée : <strong>{{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}</strong>
+              @if (d.visiteDemandee) {
+                · Visite demandée
+                @if (d.fraisVisite !== null) {
+                  ({{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }})
+                }
+              }
+            </p>
+          </details>
 
           <!-- Ce qui se passe maintenant -->
           @switch (d.statut) {
@@ -298,9 +286,6 @@
             </div>
           </section>
         }
-
-        <!-- La discussion avec le pro : messages + actions automatiques -->
-        <app-discussion-demande [demande]="d" />
       </div>
     }
   </div>

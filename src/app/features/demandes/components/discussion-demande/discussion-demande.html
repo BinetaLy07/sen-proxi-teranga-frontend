@@ -1,13 +1,32 @@
 <section class="rounded-2xl border border-gray-200 bg-white">
   <header class="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
-    <h3 class="text-xl font-semibold">
-      @if (lectureSeule()) {
-        Discussion entre {{ demande().clientNom }} et {{ demande().professionnelNom }}
-      } @else {
-        Discussion avec {{ autreNom() }}
+    <div class="min-w-0">
+      <h3 class="text-xl font-semibold">
+        @if (lectureSeule()) {
+          Discussion entre {{ demande().clientNom }} et {{ demande().professionnelNom }}
+        } @else if (dansMessages()) {
+          {{ autreNom() }}
+        } @else {
+          Discussion avec {{ autreNom() }}
+        }
+      </h3>
+      @if (dansMessages()) {
+        <span
+          class="mt-1 inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-800"
+          >Demande n° {{ demande().id }} · {{ demande().serviceTitre }}</span
+        >
       }
-    </h3>
-    <span class="text-sm text-gray-500">{{ messages().length }} message(s)</span>
+    </div>
+    @if (dansMessages()) {
+      <a
+        [routerLink]="pageDemande"
+        [queryParams]="{ demande: demande().id }"
+        class="text-link shrink-0 text-sm"
+        >Voir la demande →</a
+      >
+    } @else {
+      <span class="text-sm text-gray-500">{{ messages().length }} message(s)</span>
+    }
   </header>
 
   @if (error()) {
@@ -58,9 +77,18 @@
               {{ c.detail }} · {{ e.date | date: "dd/MM 'à' HH:mm" }}
             </p>
             @if (c.lienDevis) {
-              <button type="button" class="text-link mt-1 text-sm" (click)="voirDevis()">
-                Voir le devis →
-              </button>
+              @if (dansMessages()) {
+                <a
+                  [routerLink]="pageDemande"
+                  [queryParams]="{ demande: demande().id }"
+                  class="text-link mt-1 inline-block text-sm"
+                  >Voir le devis →</a
+                >
+              } @else {
+                <button type="button" class="text-link mt-1 text-sm" (click)="voirDevis()">
+                  Voir le devis →
+                </button>
+              }
             }
           </div>
         }

@@ -9,12 +9,12 @@ import { Devis, TypeLigneDevis } from '../../../devis/data-access/devis.models';
 import { DevisApiService } from '../../../devis/data-access/devis-api.service';
 import { Demande } from '../../data-access/demande.models';
 import { DemandeApiService } from '../../data-access/demande-api.service';
-import { ETIQUETTES, PARCOURS, STATUTS_ANNULABLES } from '../../data-access/demande-statuts';
+import { ETIQUETTES, phraseAttente, STATUTS_ANNULABLES } from '../../data-access/demande-statuts';
 import { AvisClient } from '../../components/avis-client/avis-client';
 import { PaiementClient } from '../../components/paiement-client/paiement-client';
 import { PhotosDemande } from '../../components/photos-demande/photos-demande';
 import { SuiviRendezVous } from '../../components/suivi-rendez-vous/suivi-rendez-vous';
-import { DiscussionDemande } from '../../components/discussion-demande/discussion-demande';
+import { BoutonDiscussion } from '../../components/bouton-discussion/bouton-discussion';
 
 // L'action qui demande un motif (une seule à la fois)
 type ActionAvecMotif = 'revision' | 'refus' | 'annulation';
@@ -30,7 +30,7 @@ type ActionAvecMotif = 'revision' | 'refus' | 'annulation';
     PaiementClient,
     AvisClient,
     PhotosDemande,
-    DiscussionDemande,
+    BoutonDiscussion,
   ],
   templateUrl: './mes-demandes.html',
 })
@@ -39,7 +39,6 @@ export class MesDemandes {
   private readonly devisApi = inject(DevisApiService);
   private readonly clientId = inject(AuthService).session()?.utilisateurId ?? 0;
 
-  readonly parcours = PARCOURS;
   readonly etiquettes = ETIQUETTES;
 
   // ---------- La liste ----------
@@ -52,10 +51,10 @@ export class MesDemandes {
   readonly selection = computed(
     () => this.demandes().find((d) => d.id === this.selectionId()) ?? null,
   );
-  // La position dans la frise (-1 = statut de sortie : refusée, annulée, expirée, litige)
-  readonly etape = computed(() => {
+  // La phrase « où on en est » (seulement quand c'est au pro d'agir)
+  readonly attente = computed(() => {
     const d = this.selection();
-    return d ? this.parcours.findIndex((p) => p.statut === d.statut) : -1;
+    return d ? phraseAttente(d, 'CLIENT') : null;
   });
   readonly annulable = computed(() => {
     const d = this.selection();

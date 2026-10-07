@@ -5,11 +5,13 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, finalize, forkJoin, interval, of } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -54,7 +56,7 @@ const BORDURES: Record<CarteAction['couleur'], string> = {
 // L'administrateur peut la lire (lectureSeule) pour trancher un litige.
 @Component({
   selector: 'app-discussion-demande',
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './discussion-demande.html',
 })
 export class DiscussionDemande {
@@ -69,6 +71,14 @@ export class DiscussionDemande {
 
   readonly demande = input.required<Demande>();
   readonly lectureSeule = input(false);
+  // Dans la page Messages : on affiche la demande concernée et un lien « Voir la demande »
+  readonly dansMessages = input(false);
+  // Prévient la page Messages qu'un message est parti (pour mettre la liste à jour)
+  readonly envoye = output<void>();
+
+  // La page où se trouve la demande, selon qui regarde
+  readonly pageDemande =
+    this.session?.role === 'PROFESSIONNEL' ? '/demandes-recues' : '/mes-demandes';
 
   readonly messages = signal<Message[]>([]);
   readonly devis = signal<Devis | null>(null);
@@ -167,6 +177,7 @@ export class DiscussionDemande {
         next: (message) => {
           this.messages.update((liste) => [...liste, message]);
           this.texte.reset();
+          this.envoye.emit();
         },
         error: (error) => this.error.set(apiError(error)),
       });

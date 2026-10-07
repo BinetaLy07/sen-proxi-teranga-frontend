@@ -55,9 +55,13 @@ export class Notifications {
 
   // Où aller quand on clique ? (dépend du type et du rôle)
   private destination(n: NotificationRecue): [string[], { queryParams?: Record<string, number> }] {
-    // Un message sans demande (question générale) : la page Messages.
-    // Un message d'une demande : la demande elle-même, où se trouve sa discussion.
-    if (n.type === 'NOUVEAU_MESSAGE' && !n.demandeId) return [['/messages'], {}];
+    // Un message : la page Messages, ouverte sur la bonne conversation
+    // (celle de la demande, ou les questions générales)
+    if (n.type === 'NOUVEAU_MESSAGE') {
+      return n.demandeId
+        ? [['/messages'], { queryParams: { demande: n.demandeId } }]
+        : [['/messages'], {}];
+    }
     if (n.type === 'PROFIL_VERIFIE') return [['/mon-profil'], {}];
     const page = this.role === 'PROFESSIONNEL' ? '/demandes-recues' : '/mes-demandes';
     return n.demandeId ? [[page], { queryParams: { demande: n.demandeId } }] : [[page], {}];

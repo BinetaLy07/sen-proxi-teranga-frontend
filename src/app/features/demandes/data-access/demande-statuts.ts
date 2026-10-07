@@ -1,4 +1,4 @@
-import { StatutDemande } from './demande.models';
+import { Demande, StatutDemande } from './demande.models';
 
 // Le parcours normal d'une demande, dans l'ordre (la frise des 9 étapes)
 export const PARCOURS: { statut: StatutDemande; libelle: string }[] = [
@@ -36,6 +36,32 @@ export const ETIQUETTES_PRO: Record<StatutDemande, { libelle: string; classes: s
   ...ETIQUETTES,
   DEVIS_ENVOYE: { libelle: 'Devis envoyé', classes: 'bg-orange-50 text-orange-700' },
 };
+
+// La phrase « où on en est » quand c'est à L'AUTRE d'agir (ou au moment des travaux).
+// Quand c'est à moi d'agir, pas de phrase : le bloc d'action (devis, rendez-vous,
+// paiement…) s'affiche juste en dessous.
+export function phraseAttente(d: Demande, vue: 'CLIENT' | 'PROFESSIONNEL'): string | null {
+  if (vue === 'CLIENT') {
+    switch (d.statut) {
+      case 'ACCEPTEE':
+        return `${d.professionnelNom} a accepté votre demande et prépare votre devis.`;
+      case 'EN_COURS':
+        return `${d.professionnelNom} fait les travaux.`;
+      case 'CLOTUREE':
+        return 'Demande terminée. Merci !';
+      default:
+        return null;
+    }
+  }
+  switch (d.statut) {
+    case 'DEVIS_ENVOYE':
+      return `En attente : ${d.clientNom} doit accepter ou refuser votre devis.`;
+    case 'CLOTUREE':
+      return 'Demande terminée.';
+    default:
+      return null;
+  }
+}
 
 // Annulation possible seulement avant « En cours » (même règle que le backend)
 export const STATUTS_ANNULABLES: StatutDemande[] = [
