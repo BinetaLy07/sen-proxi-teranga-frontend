@@ -30,6 +30,13 @@ export const ETIQUETTES: Record<StatutDemande, { libelle: string; classes: strin
   EN_LITIGE: { libelle: 'En litige', classes: 'bg-red-50 text-red-700' },
 };
 
+// Côté professionnel, certains textes changent de point de vue :
+// c'est le pro qui a ENVOYÉ le devis (le client, lui, l'a reçu)
+export const ETIQUETTES_PRO: Record<StatutDemande, { libelle: string; classes: string }> = {
+  ...ETIQUETTES,
+  DEVIS_ENVOYE: { libelle: 'Devis envoyé', classes: 'bg-orange-50 text-orange-700' },
+};
+
 // Annulation possible seulement avant « En cours » (même règle que le backend)
 export const STATUTS_ANNULABLES: StatutDemande[] = [
   'CREEE',

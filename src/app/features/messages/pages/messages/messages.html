@@ -5,34 +5,30 @@
   <div class="notice error" role="alert">{{ error() }}</div>
 }
 
-@if (!loading() && conversations().length === 0 && interlocuteurId() === null) {
+@if (!loading() && conversations().length === 0 && ouverte() === null) {
   <div class="mt-8 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
     <p class="font-medium text-gray-900">Pas encore de discussion.</p>
     <p class="mt-1 text-sm text-gray-500">
       @if (estPro) {
-        Écrivez à un client depuis une de vos demandes reçues (« Écrire à… »).
+        Écrivez à un client depuis une de vos demandes reçues (bloc « Discussion »).
       } @else {
-        Écrivez à un professionnel depuis son profil ou depuis une demande.
+        Écrivez à un professionnel depuis son profil, ou depuis une demande (bloc « Discussion »).
       }
     </p>
   </div>
 }
 
 <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
-  <!-- À gauche : les conversations -->
+  <!-- À gauche : les conversations (une par demande, plus les questions générales) -->
   @if (conversations().length > 0) {
     <nav class="flex w-full flex-col gap-2 lg:w-80 lg:shrink-0" aria-label="Conversations">
-      @for (c of conversations(); track c.interlocuteurId) {
+      @for (c of conversations(); track cle(c)) {
         <button
           type="button"
-          (click)="ouvrir(c.interlocuteurId, c.interlocuteurNom)"
-          [attr.aria-current]="c.interlocuteurId === interlocuteurId() ? 'true' : null"
+          (click)="ouvrir(c)"
+          [attr.aria-current]="estOuverte(c) ? 'true' : null"
           class="rounded-xl border bg-white p-4 text-left"
-          [class]="
-            c.interlocuteurId === interlocuteurId()
-              ? 'border-2 border-brand-500'
-              : 'border-gray-200'
-          "
+          [class]="estOuverte(c) ? 'border-2 border-brand-500' : 'border-gray-200'"
         >
           <span class="flex items-center justify-between gap-2">
             <strong class="text-gray-900">{{ c.interlocuteurNom }}</strong>
@@ -43,6 +39,17 @@
               >
             }
           </span>
+          @if (c.demandeId !== null) {
+            <span
+              class="mt-1 inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-800"
+              >Demande n° {{ c.demandeId }} · {{ c.demandeTitre }}</span
+            >
+          } @else {
+            <span
+              class="mt-1 inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
+              >Question générale</span
+            >
+          }
           <span class="mt-1 block truncate text-sm text-gray-600">
             {{ c.dernierMessageEnvoyeParMoi ? 'Vous : ' : '' }}{{ c.dernierMessage }}
           </span>
@@ -56,10 +63,33 @@
   }
 
   <!-- À droite : la discussion -->
-  @if (interlocuteurId() !== null) {
+  @if (ouverte(); as o) {
     <section class="flex min-w-0 flex-1 flex-col rounded-2xl border border-gray-200 bg-white">
-      <header class="border-b border-gray-100 px-5 py-4">
-        <h2 class="text-lg font-semibold">{{ interlocuteurNom() }}</h2>
+      <header
+        class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-5 py-4"
+      >
+        <div>
+          <h2 class="text-lg font-semibold">{{ o.interlocuteurNom }}</h2>
+          @if (o.demandeId !== null) {
+            <span
+              class="inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-800"
+              >Demande n° {{ o.demandeId }} · {{ o.demandeTitre }}</span
+            >
+          } @else {
+            <span
+              class="inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
+              >Question générale</span
+            >
+          }
+        </div>
+        @if (o.demandeId !== null) {
+          <a
+            [routerLink]="pageDemandes"
+            [queryParams]="{ demande: o.demandeId }"
+            class="text-link text-sm"
+            >Voir la demande →</a
+          >
+        }
       </header>
       <div class="flex h-96 flex-col-reverse gap-3 overflow-y-auto p-5" aria-live="polite">
         @for (m of messagesInverses(); track m.id) {

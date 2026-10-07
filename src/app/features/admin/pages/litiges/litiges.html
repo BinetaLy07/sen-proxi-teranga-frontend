@@ -119,6 +119,9 @@
         }
       </section>
 
+      <!-- ===== La discussion du client et du pro (lecture seule) ===== -->
+      <app-discussion-demande [demande]="d" [lectureSeule]="true" />
+
       <!-- ===== La décision ===== -->
       <section class="rounded-2xl border border-gray-200 bg-white p-6" [formGroup]="form">
         <h3 class="text-lg font-semibold text-gray-900">Votre décision</h3>

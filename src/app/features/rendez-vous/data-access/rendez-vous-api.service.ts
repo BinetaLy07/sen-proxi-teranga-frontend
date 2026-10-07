@@ -15,6 +15,14 @@ export class RendezVousApiService {
     return this.http.get<RendezVous>(`${this.baseUrl}/demandes/${demandeId}/rendez-vous`);
   }
 
+  // Toutes les dates d'une demande, de la plus ancienne à la plus récente
+  // (dates remplacées, reportées, acceptée) : sert à l'historique de la discussion
+  historique(demandeId: number) {
+    return this.http.get<RendezVous[]>(
+      `${this.baseUrl}/demandes/${demandeId}/rendez-vous/historique`,
+    );
+  }
+
   // ---------- Client ----------
 
   // Proposer une date : la première, ou une autre à la place de celle du pro

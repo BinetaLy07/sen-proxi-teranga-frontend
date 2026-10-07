@@ -74,12 +74,6 @@
               ({{ d.zoneNom }})
             }
           </p>
-          <a
-            [routerLink]="['/messages']"
-            [queryParams]="{ avec: d.professionnelId, nom: d.professionnelNom }"
-            class="text-link mt-2 inline-block text-sm"
-            >Écrire à {{ d.professionnelNom }} →</a
-          >
           <p class="mt-4 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
           <app-photos-demande [demandeId]="d.id" />
           <p class="mt-3 text-sm text-gray-600">
@@ -177,7 +171,7 @@
 
         <!-- Le devis -->
         @if (devis(); as v) {
-          <section class="rounded-2xl border border-gray-200 bg-white p-6">
+          <section id="bloc-devis" class="rounded-2xl border border-gray-200 bg-white p-6">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
               <h3 class="text-xl font-semibold">
                 Devis de {{ v.professionnelNom }}
@@ -304,6 +298,9 @@
             </div>
           </section>
         }
+
+        <!-- La discussion avec le pro : messages + actions automatiques -->
+        <app-discussion-demande [demande]="d" />
       </div>
     }
   </div>

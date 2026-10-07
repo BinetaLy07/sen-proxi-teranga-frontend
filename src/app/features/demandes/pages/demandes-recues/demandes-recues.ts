@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
@@ -15,7 +15,8 @@ import { PaiementPro } from '../../components-pro/paiement-pro/paiement-pro';
 import { RendezVousPro } from '../../components-pro/rendez-vous-pro/rendez-vous-pro';
 import { Demande, StatutDemande } from '../../data-access/demande.models';
 import { DemandeApiService } from '../../data-access/demande-api.service';
-import { ETIQUETTES, PARCOURS, STATUTS_ANNULABLES } from '../../data-access/demande-statuts';
+import { ETIQUETTES_PRO, PARCOURS, STATUTS_ANNULABLES } from '../../data-access/demande-statuts';
+import { DiscussionDemande } from '../../components/discussion-demande/discussion-demande';
 
 type Filtre = 'toutes' | 'nouvelles' | 'en-cours' | 'terminees' | 'autres';
 
@@ -36,12 +37,12 @@ const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
   imports: [
     DatePipe,
     ReactiveFormsModule,
-    RouterLink,
     PhotosDemande,
     DevisPro,
     RendezVousPro,
     PaiementPro,
     AvisPro,
+    DiscussionDemande,
   ],
   templateUrl: './demandes-recues.html',
 })
@@ -52,7 +53,7 @@ export class DemandesRecues {
   private readonly proId = inject(AuthService).session()?.utilisateurId ?? 0;
 
   readonly parcours = PARCOURS;
-  readonly etiquettes = ETIQUETTES;
+  readonly etiquettes = ETIQUETTES_PRO;
 
   // ---------- En-tête : prénom, note, paiements à confirmer ----------
   readonly prenom = signal('');

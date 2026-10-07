@@ -14,6 +14,7 @@ import { AvisClient } from '../../components/avis-client/avis-client';
 import { PaiementClient } from '../../components/paiement-client/paiement-client';
 import { PhotosDemande } from '../../components/photos-demande/photos-demande';
 import { SuiviRendezVous } from '../../components/suivi-rendez-vous/suivi-rendez-vous';
+import { DiscussionDemande } from '../../components/discussion-demande/discussion-demande';
 
 // L'action qui demande un motif (une seule à la fois)
 type ActionAvecMotif = 'revision' | 'refus' | 'annulation';
@@ -29,6 +30,7 @@ type ActionAvecMotif = 'revision' | 'refus' | 'annulation';
     PaiementClient,
     AvisClient,
     PhotosDemande,
+    DiscussionDemande,
   ],
   templateUrl: './mes-demandes.html',
 })

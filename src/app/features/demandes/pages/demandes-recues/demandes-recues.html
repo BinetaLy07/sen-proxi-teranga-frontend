@@ -179,13 +179,6 @@
           </div>
         }
 
-        <a
-          [routerLink]="['/messages']"
-          [queryParams]="{ avec: d.clientId, nom: d.clientNom }"
-          class="text-link mt-2 inline-block text-sm"
-          >Écrire à {{ d.clientNom }} →</a
-        >
-
         <h3 class="mt-5 font-semibold">Le besoin</h3>
         <p class="mt-1 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
         <app-photos-demande [demandeId]="d.id" />
@@ -343,10 +336,13 @@
       </section>
 
       <!-- Les blocs suivants s'affichent seuls quand le statut le permet -->
-      <app-devis-pro [demande]="d" (actualise)="apresAction($event)" />
+      <app-devis-pro id="bloc-devis" [demande]="d" (actualise)="apresAction($event)" />
       <app-rendez-vous-pro [demande]="d" (actualise)="apresAction($event)" />
       <app-paiement-pro [demande]="d" (actualise)="apresAction($event)" />
       <app-avis-pro [demande]="d" (actualise)="apresAction($event)" />
+
+      <!-- La discussion avec le client : messages + actions automatiques -->
+      <app-discussion-demande [demande]="d" />
     </div>
   }
 </div>

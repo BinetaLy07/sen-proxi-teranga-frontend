@@ -12,6 +12,7 @@ import {
   Paiement,
 } from '../../../paiements/data-access/paiement.models';
 import { PaiementApiService } from '../../../paiements/data-access/paiement-api.service';
+import { DiscussionDemande } from '../../../demandes/components/discussion-demande/discussion-demande';
 import { DecisionLitige } from '../../data-access/admin.models';
 import { AdminApiService } from '../../data-access/admin-api.service';
 
@@ -33,7 +34,10 @@ const DECISIONS: { valeur: DecisionLitige; titre: string; explication: string }[
 // « Litiges » : le pro a contesté un paiement déclaré par le client.
 // L'administrateur examine le dossier puis tranche, avec une explication.
 // On peut arriver ici avec ?demande=18 (tableau de bord).
-@Component({ imports: [DatePipe, ReactiveFormsModule], templateUrl: './litiges.html' })
+@Component({
+  imports: [DatePipe, ReactiveFormsModule, DiscussionDemande],
+  templateUrl: './litiges.html',
+})
 export class Litiges {
   private readonly adminApi = inject(AdminApiService);
   private readonly paiementApi = inject(PaiementApiService);
