@@ -4,6 +4,7 @@ import { environment } from '../../../../environments/environment';
 import { RendezVous } from './rendez-vous.models';
 
 // Backend : RendezVousController (client et professionnel)
+// Le client propose la date ; l'autre accepte ou propose une autre date.
 @Injectable({ providedIn: 'root' })
 export class RendezVousApiService {
   private readonly http = inject(HttpClient);
@@ -16,12 +17,15 @@ export class RendezVousApiService {
 
   // ---------- Client ----------
 
-  accepter(clientId: number, demandeId: number) {
-    return this.http.patch<RendezVous>(this.urlClient(clientId, demandeId) + '/accepter', {});
+  // Proposer une date : la première, ou une autre à la place de celle du pro
+  // dateHeure au format "2026-10-10T09:00:00"
+  proposerParClient(clientId: number, demandeId: number, dateHeure: string) {
+    return this.http.post<RendezVous>(this.urlClient(clientId, demandeId), { dateHeure });
   }
 
-  refuser(clientId: number, demandeId: number, motif: string) {
-    return this.http.patch<RendezVous>(this.urlClient(clientId, demandeId) + '/refuser', { motif });
+  // Accepter la date proposée par le professionnel
+  accepterParClient(clientId: number, demandeId: number) {
+    return this.http.patch<RendezVous>(this.urlClient(clientId, demandeId) + '/accepter', {});
   }
 
   reporterParClient(clientId: number, demandeId: number, motif: string) {
@@ -37,9 +41,14 @@ export class RendezVousApiService {
 
   // ---------- Professionnel ----------
 
-  // dateHeure au format "2026-10-10T09:00:00"
-  proposer(proId: number, demandeId: number, dateHeure: string) {
+  // Proposer une autre date (celle du client ne convient pas)
+  proposerParPro(proId: number, demandeId: number, dateHeure: string) {
     return this.http.post<RendezVous>(this.urlPro(proId, demandeId), { dateHeure });
+  }
+
+  // Accepter la date proposée par le client
+  accepterParPro(proId: number, demandeId: number) {
+    return this.http.patch<RendezVous>(this.urlPro(proId, demandeId) + '/accepter', {});
   }
 
   reporterParPro(proId: number, demandeId: number, motif: string) {

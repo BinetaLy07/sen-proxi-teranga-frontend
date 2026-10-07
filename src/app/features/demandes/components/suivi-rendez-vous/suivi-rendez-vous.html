@@ -1,4 +1,4 @@
-@if (visible()) {
+@if (visible() && etape() !== 'rien') {
   <section class="rounded-2xl border border-gray-200 bg-white p-6">
     <h3 class="text-xl font-semibold">Rendez-vous</h3>
 
@@ -6,95 +6,137 @@
       <div class="notice error" role="alert">{{ error() }}</div>
     }
 
-    @if (!rdv()) {
-      <p class="mt-3 text-gray-600">
-        Devis accepté : {{ demande().professionnelNom }} va vous proposer une date de rendez-vous.
+    @let r = rdv();
+
+    <!-- ===== Attente : le client a proposé, le pro doit répondre ===== -->
+    @if (etape() === 'attente' && r) {
+      <p class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 text-gray-700">
+        <span aria-hidden="true">⏳</span> Vous avez proposé le
+        <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong
+        >. En attente : <strong>{{ r.professionnelNom }}</strong> va accepter cette date ou en
+        proposer une autre.
       </p>
-    } @else {
-      @let r = rdv()!;
-      @switch (r.statut) {
-        @case ('PROPOSE') {
-          <p class="mt-3 text-gray-700">
-            {{ r.professionnelNom }} propose de venir le
-            <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong>
-            ({{ r.adresse }}).
+    }
+
+    <!-- ===== À vous d'agir : choisir une date, ou répondre à celle du pro ===== -->
+    @if (etape() === 'choisir' || etape() === 'repondre') {
+      <div class="mt-4 rounded-xl border border-orange-300 bg-orange-50 p-5">
+        @if (etape() === 'choisir') {
+          <p class="text-xs font-bold tracking-wider text-orange-800">
+            CHOISISSEZ LA DATE DU RENDEZ-VOUS
           </p>
-          @if (!action()) {
+          @if (r?.statut === 'REPORTE') {
+            <p class="mt-1 text-gray-800">
+              Le rendez-vous a été reporté (« {{ r?.motif }} »). Choisissez une nouvelle date.
+            </p>
+          } @else {
+            <p class="mt-1 text-gray-800">
+              Quel jour et à quelle heure {{ demande().professionnelNom }} peut-il venir ?
+            </p>
+          }
+        } @else if (r) {
+          <p class="text-xs font-bold tracking-wider text-orange-800">DATE PROPOSÉE</p>
+          <p class="mt-1 text-gray-800">
+            {{ r.professionnelNom }} propose de venir le
+            <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong> ({{ r.adresse }}).
+          </p>
+          @if (!autreDate()) {
             <div class="mt-4 flex flex-wrap gap-3">
               <button type="button" class="primary-button" (click)="accepter()" [disabled]="busy()">
                 Accepter cette date
               </button>
-              <button type="button" class="secondary-button" (click)="ouvrir('refus')">
-                Refuser et demander une autre date
+              <button type="button" class="secondary-button bg-white" (click)="ouvrirAutreDate()">
+                Proposer une autre date
               </button>
             </div>
           }
         }
-        @case ('REFUSE') {
-          <p class="mt-3 text-gray-700">
-            Vous avez refusé la date proposée (« {{ r.motif }} »). {{ r.professionnelNom }} va
-            proposer une autre date.
-          </p>
-        }
-        @case ('REPORTE') {
-          <p class="mt-3 text-gray-700">
-            Le rendez-vous a été reporté (« {{ r.motif }} »). Une nouvelle date va être proposée.
-          </p>
-        }
-        @case ('ACCEPTE') {
-          @switch (demande().statut) {
-            @case ('PLANIFIEE') {
-              <p class="mt-3 text-gray-700">
-                Rendez-vous confirmé le
-                <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong> ({{ r.adresse }}).
-              </p>
-              @if (!action()) {
+
+        <!-- Le champ date et heure (pour choisir, ou pour proposer une autre date) -->
+        @if (etape() === 'choisir' || autreDate()) {
+          <div class="mt-4">
+            <label for="date-rdv-client">Date et heure <span class="required">*</span></label>
+            <div class="flex flex-wrap gap-3">
+              <input
+                id="date-rdv-client"
+                type="datetime-local"
+                [formControl]="dateHeure"
+                [min]="maintenant"
+                class="max-w-xs bg-white"
+                [attr.aria-invalid]="dateHeure.touched && dateHeure.invalid"
+              />
+              <button type="button" class="primary-button" (click)="proposer()" [disabled]="busy()">
+                Proposer cette date
+              </button>
+              @if (autreDate()) {
                 <button
                   type="button"
-                  class="mt-4 text-sm font-medium text-red-700"
-                  (click)="ouvrir('report')"
+                  class="secondary-button bg-white"
+                  (click)="autreDate.set(false)"
                 >
-                  Reporter le rendez-vous
+                  Retour
                 </button>
               }
+            </div>
+            @if (dateHeure.touched && dateHeure.invalid) {
+              <p class="field-error">Choisissez une date et une heure à venir.</p>
             }
-            @case ('EN_COURS') {
-              <p class="mt-3 text-gray-700">
-                Les travaux ont commencé le
-                {{ r.dateDebutTravaux | date: "dd/MM/yyyy 'à' HH:mm" }}.
-              </p>
-            }
-            @case ('TERMINEE') {
-              <div class="notice">
-                {{ r.professionnelNom }} a terminé les travaux le
-                {{ r.dateFinTravaux | date: "dd/MM/yyyy 'à' HH:mm" }}. Vérifiez, puis confirmez que
-                tout est bien fait.
-              </div>
-              <button
-                type="button"
-                class="primary-button mt-4"
-                (click)="confirmerFin()"
-                [disabled]="busy()"
-              >
-                Confirmer que les travaux sont bien faits
-              </button>
-            }
-            @default {
-              <p class="mt-3 text-gray-700">
-                Travaux réalisés le {{ r.dateFinTravaux | date: 'dd/MM/yyyy' }}.
-              </p>
-            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===== Date acceptée : puis les travaux ===== -->
+    @if (etape() === 'confirme' && r) {
+      @switch (demande().statut) {
+        @case ('PLANIFIEE') {
+          <p class="mt-3 text-gray-700">
+            Rendez-vous confirmé le
+            <strong>{{ r.dateHeure | date: "dd/MM/yyyy 'à' HH:mm" }}</strong> ({{ r.adresse }}).
+          </p>
+          @if (!reporter()) {
+            <button
+              type="button"
+              class="mt-4 text-sm font-medium text-red-700"
+              (click)="ouvrirReport()"
+            >
+              Reporter le rendez-vous
+            </button>
           }
+        }
+        @case ('EN_COURS') {
+          <p class="mt-3 text-gray-700">
+            Les travaux ont commencé le
+            {{ r.dateDebutTravaux | date: "dd/MM/yyyy 'à' HH:mm" }}.
+          </p>
+        }
+        @case ('TERMINEE') {
+          <div class="notice">
+            {{ r.professionnelNom }} a terminé les travaux le
+            {{ r.dateFinTravaux | date: "dd/MM/yyyy 'à' HH:mm" }}. Vérifiez, puis confirmez que tout
+            est bien fait.
+          </div>
+          <button
+            type="button"
+            class="primary-button mt-4"
+            (click)="confirmerFin()"
+            [disabled]="busy()"
+          >
+            Confirmer que les travaux sont bien faits
+          </button>
+        }
+        @default {
+          <p class="mt-3 text-gray-700">
+            Travaux réalisés le {{ r.dateFinTravaux | date: 'dd/MM/yyyy' }}.
+          </p>
         }
       }
     }
 
-    @if (action(); as a) {
+    <!-- ===== Reporter un rendez-vous confirmé ===== -->
+    @if (reporter()) {
       <div class="mt-5">
-        <label for="motif-rdv">
-          {{ a === 'refus' ? 'Pourquoi refusez-vous cette date ?' : 'Pourquoi reporter ?' }}
-          <span class="required">*</span>
-        </label>
+        <label for="motif-rdv">Pourquoi reporter ? <span class="required">*</span></label>
         <textarea
           id="motif-rdv"
           [formControl]="motif"
@@ -106,10 +148,17 @@
           <p class="field-error">Le motif est obligatoire (500 caractères maximum).</p>
         }
         <div class="mt-3 flex flex-wrap gap-3">
-          <button type="button" class="primary-button" (click)="validerMotif()" [disabled]="busy()">
-            Envoyer
+          <button
+            type="button"
+            class="primary-button"
+            (click)="validerReport()"
+            [disabled]="busy()"
+          >
+            Reporter
           </button>
-          <button type="button" class="secondary-button" (click)="action.set(null)">Retour</button>
+          <button type="button" class="secondary-button" (click)="reporter.set(false)">
+            Retour
+          </button>
         </div>
       </div>
     }

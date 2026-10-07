@@ -13,6 +13,7 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, Observable } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
+import { dateFuture, maintenantLocal } from '../../../rendez-vous/data-access/date-heure';
 import { RendezVous } from '../../../rendez-vous/data-access/rendez-vous.models';
 import { RendezVousApiService } from '../../../rendez-vous/data-access/rendez-vous-api.service';
 import { Demande, StatutDemande } from '../../data-access/demande.models';
@@ -26,8 +27,16 @@ const STATUTS_VISIBLES: StatutDemande[] = [
   'CLOTUREE',
 ];
 
-// Bloc « Rendez-vous » côté professionnel : proposer une date, reporter,
-// puis commencer et terminer les travaux.
+// Où en est le rendez-vous, du point de vue du professionnel ?
+// - client   : c'est au client de choisir une date (la première, ou après un report)
+// - repondre : le client a proposé une date, le pro doit répondre
+// - attente  : le pro a proposé une autre date, le client doit répondre
+// - confirme : la date est acceptée (puis travaux, fin des travaux…)
+// - rien     : chargement en cours, ou rien à afficher
+type EtapePro = 'client' | 'repondre' | 'attente' | 'confirme' | 'rien';
+
+// Bloc « Rendez-vous » côté professionnel : accepter la date du client ou en
+// proposer une autre, reporter, puis commencer et terminer les travaux.
 @Component({
   selector: 'app-rendez-vous-pro',
   imports: [DatePipe, ReactiveFormsModule],
@@ -43,22 +52,29 @@ export class RendezVousPro {
   readonly visible = computed(() => STATUTS_VISIBLES.includes(this.demande().statut));
   readonly rdv = signal<RendezVous | null>(null);
   readonly charge = signal(false);
+  readonly autreDate = signal(false); // le formulaire « Proposer une autre date » est ouvert
+  readonly reporter = signal(false); // le formulaire « Reporter » est ouvert
   readonly busy = signal(false);
   readonly error = signal('');
-  readonly reporter = signal(false);
 
-  // On propose une (nouvelle) date : pas encore de rendez-vous, ou il a été refusé / reporté
-  readonly peutProposer = computed(() => {
+  readonly etape = computed<EtapePro>(() => {
     const r = this.rdv();
-    return (
-      this.demande().statut === 'DEVIS_ACCEPTE' &&
-      (!r || r.statut === 'REFUSE' || r.statut === 'REPORTE')
-    );
+    if (!this.charge()) return 'rien';
+    if (this.demande().statut !== 'DEVIS_ACCEPTE') {
+      return r?.statut === 'ACCEPTE' ? 'confirme' : 'rien';
+    }
+    if (r?.statut === 'PROPOSE') {
+      return r.proposePar === 'CLIENT' ? 'repondre' : 'attente';
+    }
+    return 'client'; // pas encore de date, ou la date a été reportée
   });
 
   // Le champ « date et heure » du navigateur donne "2026-10-10T09:00"
-  readonly dateHeure = new FormControl('', { nonNullable: true, validators: Validators.required });
   readonly maintenant = maintenantLocal();
+  readonly dateHeure = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, dateFuture],
+  });
   readonly motif = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(500)],
@@ -74,9 +90,10 @@ export class RendezVousPro {
   private charger(demandeId: number) {
     this.rdv.set(null);
     this.charge.set(false);
+    this.autreDate.set(false);
     this.reporter.set(false);
     this.error.set('');
-    this.dateHeure.reset();
+    this.dateHeure.reset('');
     if (!this.visible()) return;
     this.api.actuel(demandeId).subscribe({
       next: (rdv) => {
@@ -87,13 +104,27 @@ export class RendezVousPro {
     });
   }
 
+  accepter() {
+    this.executer(
+      this.api.accepterParPro(this.proId, this.demande().id),
+      'Rendez-vous confirmé : le client est prévenu.',
+    );
+  }
+
+  // « Proposer une autre date » : on ouvre le formulaire, vide
+  ouvrirAutreDate() {
+    this.autreDate.set(true);
+    this.dateHeure.reset('');
+    this.error.set('');
+  }
+
   proposer() {
     this.dateHeure.markAsTouched();
     if (this.dateHeure.invalid) return;
     // Le backend attend les secondes : "2026-10-10T09:00:00"
     this.executer(
-      this.api.proposer(this.proId, this.demande().id, this.dateHeure.value + ':00'),
-      'Date proposée au client.',
+      this.api.proposerParPro(this.proId, this.demande().id, this.dateHeure.value + ':00'),
+      'Autre date proposée au client.',
     );
   }
 
@@ -108,12 +139,18 @@ export class RendezVousPro {
     );
   }
 
+  ouvrirReport() {
+    this.reporter.set(true);
+    this.motif.reset();
+    this.error.set('');
+  }
+
   validerReport() {
     this.motif.markAsTouched();
     if (this.motif.invalid) return;
     this.executer(
       this.api.reporterParPro(this.proId, this.demande().id, this.motif.value.trim()),
-      'Rendez-vous reporté : proposez une nouvelle date.',
+      'Rendez-vous reporté : le client va choisir une nouvelle date.',
     );
   }
 
@@ -126,11 +163,4 @@ export class RendezVousPro {
       error: (error) => this.error.set(apiError(error)),
     });
   }
-}
-
-// La date et l'heure actuelles au format du champ "datetime-local" (AAAA-MM-JJTHH:MM)
-function maintenantLocal() {
-  const d = new Date();
-  const deux = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${deux(d.getMonth() + 1)}-${deux(d.getDate())}T${deux(d.getHours())}:${deux(d.getMinutes())}`;
 }

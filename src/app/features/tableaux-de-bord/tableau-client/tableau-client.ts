@@ -129,7 +129,7 @@ export class TableauClient {
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: () => {
-          this.message.set('Devis accepté : le professionnel va vous proposer un rendez-vous.');
+          this.message.set('Devis accepté : choisissez maintenant la date du rendez-vous.');
           this.charger();
         },
         error: (error) => this.error.set(apiError(error)),

@@ -5,6 +5,9 @@ export type TypeNotification =
   | 'DEMANDE_REFUSEE'
   | 'DEMANDE_EXPIREE'
   | 'DEVIS_RECU'
+  | 'RENDEZ_VOUS_PROPOSE'
+  | 'RENDEZ_VOUS_ACCEPTE'
+  | 'RENDEZ_VOUS_REPORTE'
   | 'PAIEMENT_DECLARE'
   | 'PAIEMENT_CONFIRME'
   | 'PROFIL_VERIFIE'
@@ -29,6 +32,9 @@ export const LIBELLES_TYPES: Record<TypeNotification, string> = {
   DEMANDE_REFUSEE: 'Demande',
   DEMANDE_EXPIREE: 'Demande',
   DEVIS_RECU: 'Devis',
+  RENDEZ_VOUS_PROPOSE: 'Rendez-vous',
+  RENDEZ_VOUS_ACCEPTE: 'Rendez-vous',
+  RENDEZ_VOUS_REPORTE: 'Rendez-vous',
   PAIEMENT_DECLARE: 'Paiement',
   PAIEMENT_CONFIRME: 'Paiement',
   PROFIL_VERIFIE: 'Profil',

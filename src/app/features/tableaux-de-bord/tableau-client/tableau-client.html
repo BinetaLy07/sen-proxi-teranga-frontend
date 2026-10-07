@@ -154,7 +154,13 @@
         <p class="font-semibold text-gray-900">{{ r.professionnelNom }} · {{ r.serviceTitre }}</p>
         <p class="text-sm text-gray-600">{{ heure(r.dateHeure) }} · {{ r.adresse }}</p>
         @if (r.statut === 'PROPOSE') {
-          <p class="mt-1 text-xs font-semibold text-orange-700">Date proposée : à confirmer</p>
+          <p class="mt-1 text-xs font-semibold text-orange-700">
+            {{
+              r.proposePar === 'CLIENT'
+                ? 'Votre date : en attente du professionnel'
+                : 'Date proposée par le professionnel : à confirmer'
+            }}
+          </p>
         }
       </div>
       <a

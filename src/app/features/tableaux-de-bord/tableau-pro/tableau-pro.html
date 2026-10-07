@@ -122,7 +122,13 @@
             <strong class="block text-gray-900">{{ r.clientNom }} · {{ r.serviceTitre }}</strong>
             <span class="text-gray-600"
               >{{ heure(r.dateHeure) }}
-              {{ r.statut === 'PROPOSE' ? '· en attente du client' : '· confirmé' }}</span
+              {{
+                r.statut === 'ACCEPTE'
+                  ? '· confirmé'
+                  : r.proposePar === 'CLIENT'
+                    ? '· à accepter'
+                    : '· en attente du client'
+              }}</span
             >
           </span>
         </a>
