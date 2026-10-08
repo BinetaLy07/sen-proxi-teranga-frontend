@@ -52,6 +52,8 @@ export class Profil {
   // ---------- Les favoris ----------
   // Les boutons « WhatsApp » et « Appeler »
   readonly contact = signal<ContactPro | null>(null);
+  // Vrai si le fichier du logo WhatsApp n'a pas été trouvé : on affiche 💬 à la place
+  readonly logoManquant = signal(false);
   readonly lienAppel = computed(() => {
     const c = this.contact();
     return c ? 'tel:+' + numeroInternational(c.telephone) : null;
