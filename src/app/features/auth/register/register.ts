@@ -1,11 +1,15 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { InscriptionService } from '../../../core/auth/inscription.service';
 import { apiError } from '../../../core/http/api-error';
-import { Zone } from '../../zones/data-access/zone.models';
-import { ZoneApiService } from '../../zones/data-access/zone-api.service';
 
 type RoleInscription = 'CLIENT' | 'PROFESSIONNEL';
 
@@ -25,10 +29,16 @@ const METIERS = [
   'Jardinier',
 ];
 
+// Un numéro de portable sénégalais (WhatsApp fonctionne sur les portables, pas sur les fixes 33)
+const PORTABLE = /^(\+221)?7[05678]\d{7}$/;
+
 // « Créer un compte » en 2 étapes :
 // 1. on choisit son rôle (client ou professionnel) ;
 // 2. on remplit le formulaire de ce rôle.
 // On peut arriver directement à l'étape 2 avec /inscription?role=PROFESSIONNEL (accueil).
+//
+// Tous les champs sont obligatoires, sauf WhatsApp.
+// Les messages d'erreur n'apparaissent qu'après un clic sur le bouton, sous les champs oubliés.
 @Component({ imports: [ReactiveFormsModule, RouterLink], templateUrl: './register.html' })
 export class Register {
   private readonly inscription = inject(InscriptionService);
@@ -40,12 +50,8 @@ export class Register {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly visible = signal(false);
-
-  // Les quartiers (pour le client : son quartier ; pour le pro : ses zones d'intervention)
-  readonly zones = signal<Zone[]>([]);
-  readonly quartiers = computed(() => this.zones().filter((z) => z.type === 'QUARTIER'));
-  readonly communes = computed(() => this.zones().filter((z) => z.type === 'COMMUNE'));
-  readonly zonesChoisies = signal<number[]>([]);
+  // Devient vrai au premier clic sur le bouton : on peut alors montrer les champs oubliés
+  readonly soumis = signal(false);
 
   readonly form = inject(FormBuilder).nonNullable.group(
     {
@@ -64,13 +70,16 @@ export class Register {
         ],
       ],
       confirmation: ['', Validators.required],
-      // Client (facultatifs)
-      adresse: ['', Validators.maxLength(255)],
-      zoneId: [''],
+      // Client
+      adresse: [''],
+      quartier: [''],
       // Professionnel
-      metier: ['', Validators.maxLength(100)],
-      description: ['', Validators.maxLength(2000)],
-      whatsapp: ['', Validators.pattern(/^(\+221)?7[05678]\d{7}$/)],
+      metier: [''],
+      description: [''],
+      zones: [''],
+      // WhatsApp : par défaut, c'est le même numéro que le téléphone
+      whatsappIdentique: [true],
+      whatsapp: ['', Validators.pattern(PORTABLE)],
       cguAcceptees: [false, Validators.requiredTrue],
     },
     {
@@ -82,13 +91,13 @@ export class Register {
   );
 
   constructor() {
-    inject(ZoneApiService)
-      .lister()
-      .subscribe({ next: (liste) => this.zones.set(liste) });
     // Bouton « Créer mon profil professionnel » de l'accueil : on saute l'étape 1
     if (inject(ActivatedRoute).snapshot.queryParamMap.get('role') === 'PROFESSIONNEL') {
       this.choisir('PROFESSIONNEL');
       this.etape.set(2);
+    } else {
+      // Par défaut c'est un compte client : on active tout de suite ses règles
+      this.choisir('CLIENT');
     }
   }
 
@@ -96,18 +105,19 @@ export class Register {
 
   choisir(role: RoleInscription) {
     this.role.set(role);
-    // Le métier n'est obligatoire que pour un professionnel
-    const metier = this.form.controls.metier;
-    metier.setValidators(
-      role === 'PROFESSIONNEL'
-        ? [Validators.required, Validators.maxLength(100)]
-        : [Validators.maxLength(100)],
-    );
-    metier.updateValueAndValidity();
+    // Chaque rôle a ses propres champs obligatoires : on active les bonnes règles
+    const pro = role === 'PROFESSIONNEL';
+    const c = this.form.controls;
+    this.regles(c.adresse, !pro, [Validators.maxLength(255)]);
+    this.regles(c.quartier, !pro, [Validators.maxLength(100)]);
+    this.regles(c.metier, pro, [Validators.maxLength(100)]);
+    this.regles(c.description, pro, [Validators.maxLength(2000)]);
+    this.regles(c.zones, pro, [Validators.maxLength(500)]);
   }
 
   continuer() {
     this.error.set('');
+    this.soumis.set(false);
     this.etape.set(2);
   }
 
@@ -118,21 +128,18 @@ export class Register {
 
   // ===== Étape 2 =====
 
-  // Zones d'intervention du pro : un clic ajoute ou retire le quartier
-  basculerZone(id: number) {
-    this.zonesChoisies.update((liste) =>
-      liste.includes(id) ? liste.filter((x) => x !== id) : [...liste, id],
-    );
+  // Un champ est montré en rouge seulement après un clic sur le bouton
+  invalid(name: keyof typeof this.form.controls) {
+    return this.soumis() && this.form.controls[name].invalid;
   }
 
-  invalid(name: keyof typeof this.form.controls) {
-    const c = this.form.controls[name];
-    return c.touched && c.invalid;
+  motsDePasseDifferents() {
+    return this.soumis() && this.form.hasError('mismatch');
   }
 
   submit() {
     if (this.busy()) return;
-    this.form.markAllAsTouched();
+    this.soumis.set(true);
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
 
@@ -149,16 +156,16 @@ export class Register {
       this.role() === 'CLIENT'
         ? this.inscription.inscrireClient({
             ...commun,
-            adresse: v.adresse.trim() || null,
-            zoneId: v.zoneId ? Number(v.zoneId) : null,
+            adresse: v.adresse.trim(),
+            quartier: v.quartier.trim(),
           })
         : this.inscription.inscrireProfessionnel({
             ...commun,
             metier: v.metier.trim(),
             competences: null,
-            description: v.description.trim() || null,
-            whatsapp: v.whatsapp.trim() || null,
-            zoneIds: this.zonesChoisies(),
+            description: v.description.trim(),
+            whatsapp: this.numeroWhatsapp(v.whatsappIdentique, v.telephone, v.whatsapp),
+            zones: v.zones.trim(),
           });
 
     this.busy.set(true);
@@ -167,5 +174,19 @@ export class Register {
       next: () => void this.router.navigate(['/connexion'], { queryParams: { inscription: 'ok' } }),
       error: (error) => this.error.set(apiError(error)),
     });
+  }
+
+  // Le numéro WhatsApp à enregistrer :
+  // - case cochée : le numéro de téléphone (s'il s'agit d'un portable) ;
+  // - case décochée : le numéro écrit (ou rien, c'est facultatif).
+  private numeroWhatsapp(identique: boolean, telephone: string, whatsapp: string) {
+    const numero = (identique ? telephone : whatsapp).trim();
+    return numero && PORTABLE.test(numero) ? numero : null;
+  }
+
+  // Ajoute « obligatoire » aux règles d'un champ, ou l'enlève
+  private regles(champ: AbstractControl, obligatoire: boolean, autres: ValidatorFn[]) {
+    champ.setValidators(obligatoire ? [Validators.required, ...autres] : autres);
+    champ.updateValueAndValidity();
   }
 }

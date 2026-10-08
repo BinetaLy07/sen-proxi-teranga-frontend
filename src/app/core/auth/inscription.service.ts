@@ -11,8 +11,8 @@ export interface InscriptionClient {
   email: string;
   motDePasse: string;
   cguAcceptees: boolean;
-  adresse: string | null; // facultatif
-  zoneId: number | null; // facultatif : son quartier
+  adresse: string; // obligatoire
+  quartier: string; // obligatoire : écrit par le client (ex : "Sacré-Cœur 3")
 }
 
 // Ce qu'on envoie pour inscrire un professionnel (backend : InscriptionProfessionnelRequest)
@@ -25,9 +25,9 @@ export interface InscriptionProfessionnel {
   cguAcceptees: boolean;
   metier: string; // obligatoire
   competences: string | null;
-  description: string | null;
-  whatsapp: string | null;
-  zoneIds: number[]; // les quartiers où il travaille (peut être vide)
+  description: string; // obligatoire
+  whatsapp: string | null; // facultatif (souvent le même numéro que le téléphone)
+  zones: string; // obligatoire : écrites par le pro, ex : "Médina, Fass, Grand Yoff"
 }
 
 // Backend : AuthController (adresses publiques, pas besoin d'être connecté).

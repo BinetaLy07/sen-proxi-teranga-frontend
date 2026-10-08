@@ -169,12 +169,9 @@
           formControlName="confirmation"
           autocomplete="new-password"
           placeholder="Le même mot de passe"
-          [attr.aria-invalid]="form.controls.confirmation.touched && form.hasError('mismatch')"
+          [attr.aria-invalid]="invalid('confirmation') || motsDePasseDifferents()"
         />
-        @if (
-          form.controls.confirmation.touched &&
-          (invalid('confirmation') || form.hasError('mismatch'))
-        ) {
+        @if (invalid('confirmation') || motsDePasseDifferents()) {
           <p class="field-error">Les mots de passe doivent être identiques.</p>
         }
       </div>
@@ -184,28 +181,28 @@
       <!-- ===== Champs du client ===== -->
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <label for="zone-client"
-            >Quartier <span class="font-normal text-gray-500">(facultatif)</span></label
-          >
-          <select
-            id="zone-client"
-            formControlName="zoneId"
-            class="h-12 w-full rounded-lg border border-gray-300 bg-white px-4 text-base"
-          >
-            <option value="">Choisir…</option>
-            @for (z of quartiers(); track z.id) {
-              <option [value]="z.id">{{ z.nom }}</option>
-            }
-          </select>
+          <label for="quartier">Quartier <span class="required">*</span></label
+          ><input
+            id="quartier"
+            formControlName="quartier"
+            placeholder="Ex. : Sacré-Cœur 3"
+            [attr.aria-invalid]="invalid('quartier')"
+          />
+          @if (invalid('quartier')) {
+            <p class="field-error">Écrivez votre quartier.</p>
+          }
         </div>
         <div>
-          <label for="adresse"
-            >Adresse <span class="font-normal text-gray-500">(facultatif)</span></label
+          <label for="adresse">Adresse <span class="required">*</span></label
           ><input
             id="adresse"
             formControlName="adresse"
-            placeholder="Ex. : Sicap Liberté, villa 12"
+            placeholder="Ex. : rue 10, villa 12"
+            [attr.aria-invalid]="invalid('adresse')"
           />
+          @if (invalid('adresse')) {
+            <p class="field-error">Votre adresse est obligatoire.</p>
+          }
         </div>
       </div>
     } @else {
@@ -230,62 +227,59 @@
       </div>
 
       <div>
-        <label for="description"
-          >Description de l'activité
-          <span class="font-normal text-gray-500">(facultatif)</span></label
-        >
+        <label for="description">Description de l'activité <span class="required">*</span></label>
         <textarea
           id="description"
           formControlName="description"
           rows="3"
           class="w-full rounded-lg border border-gray-300 p-3 text-base"
           placeholder="Décrivez votre expérience et vos services"
+          [attr.aria-invalid]="invalid('description')"
         ></textarea>
+        @if (invalid('description')) {
+          <p class="field-error">Décrivez votre activité en quelques mots.</p>
+        }
       </div>
 
-      <fieldset>
-        <legend class="mb-2 text-sm font-medium text-gray-700">
-          Zones d'intervention
-          <span class="font-normal text-gray-500">(cliquez sur vos quartiers)</span>
-        </legend>
-        <div
-          class="flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg border border-gray-200 p-3"
-        >
-          @for (z of quartiers().length > 0 ? quartiers() : communes(); track z.id) {
-            <button
-              type="button"
-              class="rounded-full border px-3 py-1.5 text-sm"
-              [class]="
-                zonesChoisies().includes(z.id)
-                  ? 'border-brand-500 bg-brand-500 text-white'
-                  : 'border-gray-300 bg-white text-gray-700'
-              "
-              [attr.aria-pressed]="zonesChoisies().includes(z.id)"
-              (click)="basculerZone(z.id)"
-            >
-              {{ z.nom }}
-            </button>
-          } @empty {
-            <span class="text-sm text-gray-500">Chargement des quartiers…</span>
-          }
-        </div>
-        <p class="mt-1.5 text-xs text-gray-500">
-          {{ zonesChoisies().length }} zone(s) choisie(s). Vous pourrez les modifier plus tard.
-        </p>
-      </fieldset>
-
       <div>
-        <label for="whatsapp"
-          >WhatsApp <span class="font-normal text-gray-500">(facultatif)</span></label
+        <label for="zones">Zones d'intervention <span class="required">*</span></label
         ><input
-          id="whatsapp"
-          type="tel"
-          formControlName="whatsapp"
-          placeholder="771234567"
-          [attr.aria-invalid]="invalid('whatsapp')"
+          id="zones"
+          formControlName="zones"
+          placeholder="Ex. : Médina, Fass, Grand Yoff"
+          [attr.aria-invalid]="invalid('zones')"
         />
-        @if (invalid('whatsapp')) {
-          <p class="field-error">Numéro WhatsApp invalide (ex. : 771234567).</p>
+        @if (invalid('zones')) {
+          <p class="field-error">Écrivez au moins un quartier où vous travaillez.</p>
+        } @else {
+          <p class="mt-1.5 text-xs text-gray-500">
+            Séparez les quartiers par des virgules. Vous pourrez les modifier plus tard.
+          </p>
+        }
+      </div>
+
+      <!-- WhatsApp : souvent le même numéro que le téléphone -->
+      <div>
+        <label class="checkbox-label"
+          ><input type="checkbox" formControlName="whatsappIdentique" /><span
+            >Mon numéro de téléphone est aussi mon numéro WhatsApp</span
+          ></label
+        >
+        @if (!form.controls.whatsappIdentique.value) {
+          <div class="mt-3">
+            <label for="whatsapp"
+              >Numéro WhatsApp <span class="font-normal text-gray-500">(facultatif)</span></label
+            ><input
+              id="whatsapp"
+              type="tel"
+              formControlName="whatsapp"
+              placeholder="771234567"
+              [attr.aria-invalid]="invalid('whatsapp')"
+            />
+            @if (invalid('whatsapp')) {
+              <p class="field-error">Numéro WhatsApp invalide (ex. : 771234567).</p>
+            }
+          </div>
         }
       </div>
     }
