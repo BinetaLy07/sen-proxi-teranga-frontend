@@ -10,7 +10,11 @@ import { DemandeApiService } from '../../../demandes/data-access/demande-api.ser
 import { FavoriApiService } from '../../../favoris/data-access/favori-api.service';
 import { Zone } from '../../../zones/data-access/zone.models';
 import { ZoneApiService } from '../../../zones/data-access/zone-api.service';
-import { ProfilProfessionnel, ServicePro } from '../../data-access/professionnel.models';
+import {
+  ContactPro,
+  ProfilProfessionnel,
+  ServicePro,
+} from '../../data-access/professionnel.models';
 import { ProfessionnelApiService } from '../../data-access/professionnel-api.service';
 
 // Les règles du backend pour les fichiers joints
@@ -46,6 +50,21 @@ export class Profil {
   );
 
   // ---------- Les favoris ----------
+  // Les boutons « WhatsApp » et « Appeler »
+  readonly contact = signal<ContactPro | null>(null);
+  readonly lienAppel = computed(() => {
+    const c = this.contact();
+    return c ? 'tel:+' + numeroInternational(c.telephone) : null;
+  });
+  readonly lienWhatsapp = computed(() => {
+    const c = this.contact();
+    const p = this.profil();
+    if (!c?.whatsapp) return null;
+    // Un premier message déjà écrit : le client n'a plus qu'à l'envoyer (ou à faire un vocal)
+    const texte = `Bonjour ${p?.prenom ?? ''}, je vous ai trouvé sur Sen Proxi Teranga.`;
+    return `https://wa.me/${numeroInternational(c.whatsapp)}?text=${encodeURIComponent(texte)}`;
+  });
+
   readonly favori = signal(false);
   readonly favoriBusy = signal(false);
 
@@ -70,6 +89,12 @@ export class Profil {
 
   constructor() {
     this.chargerProfil();
+
+    // Les numéros du pro pour les boutons « WhatsApp » et « Appeler »
+    this.professionnelApi.contact(this.professionnelId).subscribe({
+      next: (c) => this.contact.set(c),
+      error: () => this.contact.set(null), // pas de boutons si on ne peut pas les obtenir
+    });
 
     // Pour proposer les quartiers dans le formulaire
     this.zoneApi.lister().subscribe({
@@ -237,4 +262,10 @@ function dateDuJour() {
   const mois = String(d.getMonth() + 1).padStart(2, '0');
   const jour = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${mois}-${jour}`;
+}
+
+// "771234567" ou "+221 77 123 45 67" -> "221771234567" (le format attendu par wa.me et tel:)
+function numeroInternational(numero: string) {
+  const chiffres = numero.replace(/\D/g, '');
+  return chiffres.startsWith('221') ? chiffres : '221' + chiffres;
 }

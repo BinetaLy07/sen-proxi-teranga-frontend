@@ -89,3 +89,10 @@ export interface ModifierProfil {
   whatsapp: string | null;
   alerteSmsActive: boolean;
 }
+
+// Les numéros d'un pro, pour les boutons « WhatsApp » et « Appeler » (backend : ContactProResponse)
+export interface ContactPro {
+  professionnelId: number;
+  telephone: string;
+  whatsapp: string | null; // null : le pro n'a pas donné de WhatsApp
+}

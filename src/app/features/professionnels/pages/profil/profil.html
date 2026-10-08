@@ -55,6 +55,28 @@
             </p>
           </div>
           <div class="flex flex-col gap-2">
+            <!-- Contacter directement : pratique pour ceux qui préfèrent parler ou envoyer un vocal -->
+            @if (lienWhatsapp(); as lien) {
+              <a
+                [href]="lien"
+                target="_blank"
+                rel="noopener"
+                class="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                [attr.aria-label]="'Écrire à ' + p.prenom + ' sur WhatsApp'"
+              >
+                <img src="logos/whatsapp.png" alt="" class="size-6" />
+                WhatsApp
+              </a>
+            }
+            @if (lienAppel(); as lien) {
+              <a
+                [href]="lien"
+                class="flex min-h-12 items-center justify-center gap-2 rounded-lg border-2 border-emerald-600 px-5 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                [attr.aria-label]="'Appeler ' + p.prenom"
+              >
+                <span aria-hidden="true">📞</span> Appeler
+              </a>
+            }
             <button
               type="button"
               class="secondary-button"

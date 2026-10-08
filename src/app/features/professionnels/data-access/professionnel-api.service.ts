@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import {
+  ContactPro,
   FiltresRecherche,
   ModifierProfil,
   ProfessionnelResume,
@@ -32,6 +33,11 @@ export class ProfessionnelApiService {
     return this.http.get<ProfilProfessionnel>(
       `${this.baseUrl}/professionnels/${professionnelId}/profil`,
     );
+  }
+
+  // Téléphone et WhatsApp d'un pro (seulement pour une personne connectée)
+  contact(professionnelId: number) {
+    return this.http.get<ContactPro>(`${this.baseUrl}/professionnels/${professionnelId}/contact`);
   }
 
   // Son propre profil, même s'il n'est pas encore validé (espace du pro)
