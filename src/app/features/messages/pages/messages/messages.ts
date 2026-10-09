@@ -1,8 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, interval } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
@@ -10,7 +9,9 @@ import { DiscussionDemande } from '../../../demandes/components/discussion-deman
 import { Demande } from '../../../demandes/data-access/demande.models';
 import { DemandeApiService } from '../../../demandes/data-access/demande-api.service';
 import { CompteursService } from '../../../notifications/data-access/compteurs.service';
-import { Conversation, Message } from '../../data-access/message.models';
+import { BarreSaisie } from '../../../../shared/components/barre-saisie/barre-saisie';
+import { BulleMessage } from '../../../../shared/components/bulle-message/bulle-message';
+import { Conversation, Message, Vocal } from '../../data-access/message.models';
 import { MessageApiService } from '../../data-access/message-api.service';
 
 // La conversation ouverte : une personne + une demande (ou null : question générale)
@@ -21,25 +22,35 @@ interface Ouverte {
   demandeTitre: string | null;
 }
 
-// « Messages » : à gauche les conversations, à droite la discussion ouverte.
-// Avec la même personne, il y a une conversation par demande, plus les « questions générales ».
+// « Messages » : comme sur un téléphone, on voit UNE chose à la fois.
+// - /messages                       -> la discussion la plus récente, seule ;
+// - /messages?liste=1               -> la liste de mes discussions (« ← Mes discussions ») ;
+// - /messages?demande=20            -> la discussion d'une demande (bouton « Discuter avec… ») ;
+// - /messages?avec=2&nom=Moussa…    -> une question générale (« Écrire à … » sur un profil).
+// Tout passe par l'adresse : le bouton « retour » du navigateur fonctionne donc aussi.
+// Une discussion seule a 2 liens en haut : « ← Mes discussions » et « Mes demandes ».
 // - la conversation d'une demande s'affiche avec le bloc « Discussion » (messages + cartes
 //   automatiques : devis, rendez-vous, paiement…) ;
 // - une question générale s'affiche en simples messages.
-// On peut arriver ici avec ?demande=20 (bouton « Discuter avec… » d'une demande)
-// ou avec ?avec=2&nom=Moussa%20Fall (question générale, ex : depuis le profil d'un pro).
+// Les messages peuvent être écrits ou vocaux (comme WhatsApp).
 @Component({
-  imports: [DatePipe, ReactiveFormsModule, DiscussionDemande],
+  imports: [DatePipe, NgTemplateOutlet, RouterLink, DiscussionDemande, BarreSaisie, BulleMessage],
   templateUrl: './messages.html',
 })
 export class Messages {
   private readonly api = inject(MessageApiService);
   private readonly demandeApi = inject(DemandeApiService);
   private readonly compteurs = inject(CompteursService);
+  private readonly router = inject(Router);
   private readonly session = inject(AuthService).session();
   readonly moiId = this.session?.utilisateurId ?? 0;
   // Pour adapter les textes : un pro écrit à ses clients, un client écrit aux pros
   readonly estPro = this.session?.role === 'PROFESSIONNEL';
+  // Le lien « Mes demandes » : la page des demandes, selon qui regarde
+  readonly pageDemandes = this.estPro ? '/demandes-recues' : '/mes-demandes';
+
+  // true : la liste de mes discussions (?liste=1) ; false : une discussion seule
+  readonly modeListe = signal(false);
 
   readonly conversations = signal<Conversation[]>([]);
   readonly ouverte = signal<Ouverte | null>(null);
@@ -53,28 +64,39 @@ export class Messages {
   readonly loading = signal(true);
   readonly busy = signal(false);
   readonly error = signal('');
-  readonly texte = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.maxLength(1000)],
-  });
+  // La barre du bas (champ + micro), pour la vider quand un texte est parti
+  private readonly barre = viewChild(BarreSaisie);
 
   constructor() {
-    const params = inject(ActivatedRoute).snapshot.queryParamMap;
-    const avec = Number(params.get('avec')) || null;
-    const nom = params.get('nom') ?? '';
-    const demande = Number(params.get('demande')) || null;
+    // À chaque changement d'adresse (clic sur un lien, bouton « retour »…), on affiche
+    // ce qu'elle demande. (La page n'est pas recréée quand seul le « ?… » change.)
+    inject(ActivatedRoute)
+      .queryParamMap.pipe(takeUntilDestroyed())
+      .subscribe((params) => {
+        const avec = Number(params.get('avec')) || null;
+        const demande = Number(params.get('demande')) || null;
+        this.modeListe.set(params.get('liste') !== null);
 
-    this.chargerConversations(avec === null && demande === null);
-    if (demande !== null) {
-      this.ouvrirDemande(demande);
-    } else if (avec !== null) {
-      this.ouvrir({
-        interlocuteurId: avec,
-        interlocuteurNom: nom,
-        demandeId: null,
-        demandeTitre: null,
+        if (this.modeListe()) {
+          this.ouverte.set(null);
+          this.chargerConversations(false);
+        } else if (demande !== null) {
+          this.chargerConversations(false);
+          this.ouvrirDemande(demande);
+        } else if (avec !== null) {
+          this.chargerConversations(false);
+          this.ouvrir({
+            interlocuteurId: avec,
+            interlocuteurNom: params.get('nom') ?? '',
+            demandeId: null,
+            demandeTitre: null,
+          });
+        } else {
+          // Menu « Messages » : on ouvre la discussion la plus récente
+          this.ouverte.set(null);
+          this.chargerConversations(true);
+        }
       });
-    }
 
     // Toutes les 15 secondes, on regarde s'il y a du nouveau
     interval(15000)
@@ -87,14 +109,28 @@ export class Messages {
       });
   }
 
+  // Dans la liste : cliquer une conversation l'ouvre seule (son adresse change)
+  choisir(c: Conversation) {
+    const queryParams =
+      c.demandeId !== null
+        ? { demande: c.demandeId }
+        : { avec: c.interlocuteurId, nom: c.interlocuteurNom };
+    void this.router.navigate(['/messages'], { queryParams });
+  }
+
+  // Les 2 premières lettres du nom, dans le rond (ex : « bineta ly » -> « BL »)
+  initiales(nom: string) {
+    return nom
+      .split(' ')
+      .filter((mot) => mot.length > 0)
+      .slice(0, 2)
+      .map((mot) => mot[0].toUpperCase())
+      .join('');
+  }
+
   // La « clé » d'une conversation : la personne + la demande
   cle(c: { interlocuteurId: number; demandeId: number | null }) {
     return `${c.interlocuteurId}-${c.demandeId ?? 'general'}`;
-  }
-
-  estOuverte(c: Conversation) {
-    const o = this.ouverte();
-    return o !== null && this.cle(o) === this.cle(c);
   }
 
   // ouvrirLaPremiere : à l'arrivée sur la page, on ouvre la conversation la plus récente
@@ -166,22 +202,49 @@ export class Messages {
     });
   }
 
-  // Questions générales. Appelé par (submit) du formulaire : preventDefault() empêche le navigateur
-  // de recharger toute la page (son comportement normal quand on envoie un <form>)
-  envoyer(event?: Event) {
-    event?.preventDefault();
+  // « Supprimer pour moi » : le message disparaît de la liste
+  retirer(messageId: number) {
+    this.messages.update((liste) => liste.filter((m) => m.id !== messageId));
+    this.chargerConversations(false);
+  }
+
+  // Un message a changé (ex : je viens de le supprimer) : on remplace l'ancien
+  remplacer(message: Message) {
+    this.messages.update((liste) => liste.map((m) => (m.id === message.id ? message : m)));
+    this.chargerConversations(false);
+  }
+
+  // Questions générales : un message écrit (venant de la barre du bas)
+  envoyerTexte(texte: string) {
     const o = this.ouverte();
-    this.texte.markAsTouched();
-    if (o === null || this.texte.invalid || this.busy()) return;
+    if (o === null || this.busy()) return;
     this.busy.set(true);
     this.error.set('');
     this.api
-      .envoyer(o.interlocuteurId, this.texte.value.trim())
+      .envoyer(o.interlocuteurId, texte)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (message) => {
           this.messages.update((liste) => [...liste, message]);
-          this.texte.reset();
+          this.barre()?.vider();
+          this.chargerConversations(false);
+        },
+        error: (error) => this.error.set(apiError(error)),
+      });
+  }
+
+  // Questions générales : un message vocal (venant de la barre du bas)
+  envoyerVocal(vocal: Vocal) {
+    const o = this.ouverte();
+    if (o === null || this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    this.api
+      .envoyerVocal(o.interlocuteurId, vocal)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: (message) => {
+          this.messages.update((liste) => [...liste, message]);
           this.chargerConversations(false);
         },
         error: (error) => this.error.set(apiError(error)),

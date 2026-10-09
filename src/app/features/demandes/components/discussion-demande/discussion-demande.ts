@@ -8,23 +8,25 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, finalize, forkJoin, interval, of } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
 import { Devis } from '../../../devis/data-access/devis.models';
 import { DevisApiService } from '../../../devis/data-access/devis-api.service';
-import { Message } from '../../../messages/data-access/message.models';
+import { Message, Vocal } from '../../../messages/data-access/message.models';
 import { MessageApiService } from '../../../messages/data-access/message-api.service';
 import { CompteursService } from '../../../notifications/data-access/compteurs.service';
 import { MODES_PAIEMENT, Paiement } from '../../../paiements/data-access/paiement.models';
 import { PaiementApiService } from '../../../paiements/data-access/paiement-api.service';
 import { AuteurRendezVous, RendezVous } from '../../../rendez-vous/data-access/rendez-vous.models';
 import { RendezVousApiService } from '../../../rendez-vous/data-access/rendez-vous-api.service';
+import { BarreSaisie } from '../../../../shared/components/barre-saisie/barre-saisie';
+import { BulleMessage } from '../../../../shared/components/bulle-message/bulle-message';
 import { Demande } from '../../data-access/demande.models';
 
 // Une petite carte d'action, affichée au milieu des messages (option B2)
@@ -56,7 +58,7 @@ const BORDURES: Record<CarteAction['couleur'], string> = {
 // L'administrateur peut la lire (lectureSeule) pour trancher un litige.
 @Component({
   selector: 'app-discussion-demande',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, RouterLink, BarreSaisie, BulleMessage],
   templateUrl: './discussion-demande.html',
 })
 export class DiscussionDemande {
@@ -89,10 +91,8 @@ export class DiscussionDemande {
   readonly error = signal('');
   readonly bordures = BORDURES;
 
-  readonly texte = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.maxLength(1000)],
-  });
+  // La barre du bas (champ + micro), pour la vider quand un texte est parti
+  private readonly barre = viewChild(BarreSaisie);
 
   // Le nom de l'autre (à qui j'écris)
   readonly autreNom = computed(() =>
@@ -163,24 +163,51 @@ export class DiscussionDemande {
     });
   }
 
-  // Appelé par (submit) : preventDefault() empêche le navigateur de recharger la page
-  envoyer(event?: Event) {
-    event?.preventDefault();
-    this.texte.markAsTouched();
-    if (this.texte.invalid || this.busy() || this.lectureSeule()) return;
+  // Un message écrit (venant de la barre du bas)
+  envoyerTexte(texte: string) {
+    if (this.busy() || this.lectureSeule()) return;
     this.busy.set(true);
     this.error.set('');
     this.messageApi
-      .envoyerDansDemande(this.demande().id, this.texte.value.trim())
+      .envoyerDansDemande(this.demande().id, texte)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (message) => {
           this.messages.update((liste) => [...liste, message]);
-          this.texte.reset();
+          this.barre()?.vider();
           this.envoye.emit();
         },
         error: (error) => this.error.set(apiError(error)),
       });
+  }
+
+  // Un message vocal (venant de la barre du bas)
+  envoyerVocal(vocal: Vocal) {
+    if (this.busy() || this.lectureSeule()) return;
+    this.busy.set(true);
+    this.error.set('');
+    this.messageApi
+      .envoyerVocalDansDemande(this.demande().id, vocal)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: (message) => {
+          this.messages.update((liste) => [...liste, message]);
+          this.envoye.emit();
+        },
+        error: (error) => this.error.set(apiError(error)),
+      });
+  }
+
+  // « Supprimer pour moi » : le message disparaît de la liste
+  retirer(messageId: number) {
+    this.messages.update((liste) => liste.filter((m) => m.id !== messageId));
+    this.envoye.emit();
+  }
+
+  // Un message a changé (ex : je viens de le supprimer) : on remplace l'ancien
+  remplacer(message: Message) {
+    this.messages.update((liste) => liste.map((m) => (m.id === message.id ? message : m)));
+    this.envoye.emit(); // la liste des conversations se met à jour
   }
 
   // « Voir le devis → » : on descend jusqu'au bloc du devis, sur la même page

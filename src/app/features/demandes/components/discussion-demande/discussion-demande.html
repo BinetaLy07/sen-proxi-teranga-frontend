@@ -41,29 +41,13 @@
     @if (charge()) {
       @for (e of elementsInverses(); track e.cle) {
         @if (e.sorte === 'message') {
-          @let m = e.message;
-          <div
-            class="max-w-[80%] rounded-2xl px-4 py-2"
-            [class]="
-              m.expediteurId === moiId
-                ? 'self-end rounded-br-sm bg-brand-500 text-white'
-                : 'self-start rounded-bl-sm bg-gray-100 text-gray-900'
-            "
-          >
-            @if (lectureSeule()) {
-              <p class="text-xs font-semibold text-gray-600">{{ m.expediteurNom }}</p>
-            }
-            <p class="whitespace-pre-line">{{ m.contenu }}</p>
-            <p
-              class="mt-1 text-xs"
-              [class]="m.expediteurId === moiId ? 'text-white/80' : 'text-gray-500'"
-            >
-              {{ m.dateEnvoi | date: "dd/MM 'à' HH:mm" }}
-              @if (m.expediteurId === moiId && m.lu) {
-                · lu
-              }
-            </p>
-          </div>
+          <app-bulle-message
+            [message]="e.message"
+            [moiId]="moiId"
+            [lectureSeule]="lectureSeule()"
+            (modifie)="remplacer($event)"
+            (masque)="retirer($event)"
+          />
         } @else {
           @let c = e.carte;
           <div
@@ -103,19 +87,12 @@
       Lecture seule : l'administrateur peut lire la discussion, mais pas y écrire.
     </p>
   } @else {
-    <form
-      (submit)="envoyer($event)"
-      class="flex gap-3 border-t border-gray-100 px-6 py-4"
-      novalidate
-    >
-      <label for="texte-discussion" class="sr-only">Votre message</label>
-      <input
-        id="texte-discussion"
-        [formControl]="texte"
-        [placeholder]="'Écrire à ' + autreNom() + '…'"
-        class="flex-1"
-      />
-      <button class="primary-button" type="submit" [disabled]="busy()">Envoyer</button>
-    </form>
+    <app-barre-saisie
+      class="block border-t border-gray-100"
+      [placeholder]="'Écrire à ' + autreNom() + '…'"
+      [busy]="busy()"
+      (texte)="envoyerTexte($event)"
+      (vocal)="envoyerVocal($event)"
+    />
   }
 </section>

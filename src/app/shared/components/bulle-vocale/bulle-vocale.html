@@ -1,0 +1,55 @@
+<div class="flex min-w-56 items-center gap-3">
+  <button
+    type="button"
+    (click)="basculer()"
+    [disabled]="chargement()"
+    class="flex size-9 shrink-0 items-center justify-center rounded-full"
+    [class]="moi() ? 'bg-white text-brand-500' : 'bg-brand-500 text-white'"
+    [attr.aria-label]="
+      enLecture() ? 'Mettre le message vocal en pause' : 'Écouter le message vocal'
+    "
+  >
+    @if (chargement()) {
+      <span
+        class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+      ></span>
+    } @else if (enLecture()) {
+      <!-- Pause -->
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="5" y="4" width="5" height="16" rx="1" />
+        <rect x="14" y="4" width="5" height="16" rx="1" />
+      </svg>
+    } @else {
+      <!-- Lecture -->
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M7 4.5v15l13-7.5z" />
+      </svg>
+    }
+  </button>
+
+  <!-- Les petites barres : colorées au fur et à mesure de l'écoute -->
+  <span class="flex h-7 flex-1 items-center gap-0.5" aria-hidden="true">
+    @for (hauteur of barres(); track $index) {
+      <i
+        class="block w-[3px] rounded-full"
+        [style.height.px]="hauteur"
+        [class]="
+          $index < barresEcoutees()
+            ? moi()
+              ? 'bg-white'
+              : 'bg-brand-500'
+            : moi()
+              ? 'bg-white/50'
+              : 'bg-gray-400'
+        "
+      ></i>
+    }
+  </span>
+
+  <span class="text-xs font-semibold tabular-nums">{{ temps() }}</span>
+</div>
+@if (erreur()) {
+  <p class="mt-1 text-xs" [class]="moi() ? 'text-white/80' : 'text-red-600'">
+    Impossible d'écouter ce message vocal.
+  </p>
+}

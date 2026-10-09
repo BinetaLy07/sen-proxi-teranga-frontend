@@ -11,73 +11,78 @@
   }
 </p>
 
-<!-- Paiements déclarés par les clients, à confirmer -->
-@for (p of paiementsAConfirmer(); track p.id) {
-  <div class="notice success flex flex-wrap items-center justify-between gap-3">
-    <span>
-      <strong>{{ p.clientNom }} a déclaré un paiement de {{ montant(p.montant) }}</strong> pour «
-      {{ p.serviceTitre }} ». À confirmer.
-    </span>
-    <button type="button" class="secondary-button" (click)="choisir(p.demandeId)">Voir</button>
+<!-- Le tableau de bord (paiements, compteurs, filtres) : seulement avec la liste -->
+@if (!selection()) {
+  <!-- Paiements déclarés par les clients, à confirmer -->
+  @for (p of paiementsAConfirmer(); track p.id) {
+    <div class="notice success flex flex-wrap items-center justify-between gap-3">
+      <span>
+        <strong>{{ p.clientNom }} a déclaré un paiement de {{ montant(p.montant) }}</strong> pour «
+        {{ p.serviceTitre }} ». À confirmer.
+      </span>
+      <button type="button" class="secondary-button" (click)="ouvrirDemande(p.demandeId)">
+        Voir
+      </button>
+    </div>
+  }
+
+  <!-- Les compteurs -->
+  <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Nouvelles demandes</p>
+      <p class="mt-1 text-3xl font-bold text-brand-500">{{ compteurs().nouvelles }}</p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">En cours</p>
+      <p class="mt-1 text-3xl font-bold text-gray-900">{{ compteurs().enCours }}</p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Paiements à confirmer</p>
+      <p class="mt-1 text-3xl font-bold text-emerald-700">{{ paiementsAConfirmer().length }}</p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-sm text-gray-600">Ma note</p>
+      <p class="mt-1 text-3xl font-bold text-gray-900">
+        @if (note(); as n) {
+          @if (n.nombre > 0) {
+            {{ noteTexte(n.moyenne) }}
+            <span class="text-sm font-normal text-gray-500">· {{ n.nombre }} avis</span>
+          } @else {
+            <span class="text-base font-normal text-gray-500">Pas encore d'avis</span>
+          }
+        }
+      </p>
+    </div>
+  </div>
+
+  <!-- Les filtres -->
+  <div class="mt-6 flex flex-wrap gap-2" role="group" aria-label="Filtrer les demandes">
+    @for (
+      f of [
+        { cle: 'toutes', libelle: 'Toutes', nombre: compteurs().toutes },
+        { cle: 'nouvelles', libelle: 'Nouvelles', nombre: compteurs().nouvelles },
+        { cle: 'en-cours', libelle: 'En cours', nombre: compteurs().enCours },
+        { cle: 'terminees', libelle: 'Terminées', nombre: compteurs().terminees },
+        { cle: 'autres', libelle: 'Refusées, annulées…', nombre: compteurs().autres },
+      ];
+      track f.cle
+    ) {
+      <button
+        type="button"
+        class="rounded-full border px-4 py-2 text-sm"
+        [class]="
+          filtre() === f.cle
+            ? 'border-gray-900 bg-gray-900 font-semibold text-white'
+            : 'border-gray-300 bg-white text-gray-700'
+        "
+        [attr.aria-pressed]="filtre() === f.cle"
+        (click)="filtre.set($any(f.cle))"
+      >
+        {{ f.libelle }} · {{ f.nombre }}
+      </button>
+    }
   </div>
 }
-
-<!-- Les compteurs -->
-<div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <p class="text-sm text-gray-600">Nouvelles demandes</p>
-    <p class="mt-1 text-3xl font-bold text-brand-500">{{ compteurs().nouvelles }}</p>
-  </div>
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <p class="text-sm text-gray-600">En cours</p>
-    <p class="mt-1 text-3xl font-bold text-gray-900">{{ compteurs().enCours }}</p>
-  </div>
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <p class="text-sm text-gray-600">Paiements à confirmer</p>
-    <p class="mt-1 text-3xl font-bold text-emerald-700">{{ paiementsAConfirmer().length }}</p>
-  </div>
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <p class="text-sm text-gray-600">Ma note</p>
-    <p class="mt-1 text-3xl font-bold text-gray-900">
-      @if (note(); as n) {
-        @if (n.nombre > 0) {
-          {{ noteTexte(n.moyenne) }}
-          <span class="text-sm font-normal text-gray-500">· {{ n.nombre }} avis</span>
-        } @else {
-          <span class="text-base font-normal text-gray-500">Pas encore d'avis</span>
-        }
-      }
-    </p>
-  </div>
-</div>
-
-<!-- Les filtres -->
-<div class="mt-6 flex flex-wrap gap-2" role="group" aria-label="Filtrer les demandes">
-  @for (
-    f of [
-      { cle: 'toutes', libelle: 'Toutes', nombre: compteurs().toutes },
-      { cle: 'nouvelles', libelle: 'Nouvelles', nombre: compteurs().nouvelles },
-      { cle: 'en-cours', libelle: 'En cours', nombre: compteurs().enCours },
-      { cle: 'terminees', libelle: 'Terminées', nombre: compteurs().terminees },
-      { cle: 'autres', libelle: 'Refusées, annulées…', nombre: compteurs().autres },
-    ];
-    track f.cle
-  ) {
-    <button
-      type="button"
-      class="rounded-full border px-4 py-2 text-sm"
-      [class]="
-        filtre() === f.cle
-          ? 'border-gray-900 bg-gray-900 font-semibold text-white'
-          : 'border-gray-300 bg-white text-gray-700'
-      "
-      [attr.aria-pressed]="filtre() === f.cle"
-      (click)="filtre.set($any(f.cle))"
-    >
-      {{ f.libelle }} · {{ f.nombre }}
-    </button>
-  }
-</div>
 
 @if (error()) {
   <div class="notice error" role="alert">{{ error() }}</div>
@@ -85,20 +90,20 @@
 @if (loading() && demandes().length === 0) {
   <p class="py-10" role="status">Chargement des demandes…</p>
 }
-@if (!loading() && !error() && filtrees().length === 0) {
+@if (!selection() && !loading() && !error() && filtrees().length === 0) {
   <div class="mt-6 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
     <p class="font-medium text-gray-900">Aucune demande dans cette liste.</p>
   </div>
 }
 
 <div class="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
-  <!-- ===== À gauche : la liste ===== -->
-  @if (filtrees().length > 0) {
-    <nav class="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0" aria-label="Demandes reçues">
+  <!-- ===== La liste (cachée quand une demande est ouverte) ===== -->
+  @if (!selection() && filtrees().length > 0) {
+    <nav class="flex w-full max-w-3xl flex-col gap-3" aria-label="Demandes reçues">
       @for (d of filtrees(); track d.id) {
         <button
           type="button"
-          (click)="choisir(d.id)"
+          (click)="ouvrirDemande(d.id)"
           [attr.aria-current]="d.id === selectionId() ? 'true' : null"
           class="rounded-xl border bg-white p-4 text-left"
           [class]="
@@ -144,9 +149,12 @@
     </nav>
   }
 
-  <!-- ===== À droite : le détail ===== -->
+  <!-- ===== Le détail seul, avec « ← Retour » ===== -->
   @if (selection(); as d) {
     <div class="flex min-w-0 flex-1 flex-col gap-6">
+      <a routerLink="/demandes-recues" class="text-link self-start text-sm font-semibold"
+        >← Demandes reçues</a
+      >
       <section class="rounded-2xl border border-gray-200 bg-white p-6">
         <div class="flex flex-wrap items-center gap-2">
           @if (d.urgente) {

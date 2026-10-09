@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DOCUMENT, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiError } from '../../../../core/http/api-error';
@@ -40,6 +41,7 @@ const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
 @Component({
   imports: [
     DatePipe,
+    RouterLink,
     ReactiveFormsModule,
     PhotosDemande,
     DevisPro,
@@ -129,9 +131,10 @@ export class DemandesRecues {
   readonly actionError = signal('');
   readonly actionSuccess = signal('');
 
-  // Arrivée depuis une notification : /demandes-recues?demande=18 ouvre la demande 18
-  private readonly demandeDemandee =
-    Number(inject(ActivatedRoute).snapshot.queryParamMap.get('demande')) || null;
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
+  private dejaCharge = false;
 
   constructor() {
     this.professionnelApi.monProfil(this.proId).subscribe({
@@ -140,7 +143,27 @@ export class DemandesRecues {
         this.note.set({ moyenne: p.noteMoyenne, nombre: p.nombreAvis });
       },
     });
-    this.charger(this.demandeDemandee);
+    // Une chose à la fois, et tout passe par l'adresse :
+    // - /demandes-recues               -> la liste de toutes les demandes ;
+    // - /demandes-recues?demande=18    -> seulement le détail de la demande 18 (avec « ← Retour »).
+    // Le bouton « retour » du navigateur ramène donc aussi à la liste.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const id = Number(params.get('demande')) || null;
+      if (!this.dejaCharge) {
+        this.dejaCharge = true;
+        this.charger(id);
+      } else if (id !== null) {
+        this.choisir(id);
+      } else {
+        this.selectionId.set(null);
+      }
+      this.document.defaultView?.scrollTo({ top: 0 });
+    });
+  }
+
+  // Clic sur une demande de la liste : on change l'adresse (?demande=18)
+  ouvrirDemande(id: number) {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { demande: id } });
   }
 
   // ===== Chargement =====
@@ -153,8 +176,9 @@ export class DemandesRecues {
       .subscribe({
         next: (liste) => {
           this.demandes.set(liste);
-          const id = keepId ?? liste[0]?.id ?? null;
-          if (id !== null) this.choisir(id, keepId !== null);
+          // On n'ouvre une demande que si on la demande (notification, action en cours) :
+          // sinon on montre seulement la liste, et on clique sur celle qu'on veut voir
+          if (keepId !== null) this.choisir(keepId, true);
         },
         error: (error) => this.error.set(apiError(error)),
       });

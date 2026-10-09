@@ -5,7 +5,7 @@
   <div class="notice error" role="alert">{{ error() }}</div>
 }
 
-@if (!loading() && conversations().length === 0 && ouverte() === null) {
+@if (!loading() && conversations().length === 0 && (modeListe() || ouverte() === null)) {
   <div class="mt-8 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center">
     <p class="font-medium text-gray-900">Pas encore de discussion.</p>
     <p class="mt-1 text-sm text-gray-500">
@@ -19,17 +19,27 @@
   </div>
 }
 
+<!-- Une discussion seule : les 2 liens en haut -->
+<ng-template #liens>
+  <div class="flex items-center justify-between gap-3 text-sm font-semibold">
+    <a routerLink="/messages" [queryParams]="{ liste: 1 }" class="text-link">← Mes discussions</a>
+    <a
+      [routerLink]="pageDemandes"
+      class="rounded-lg bg-indigo-50 px-3 py-1.5 text-brand-500 hover:bg-indigo-100"
+      >📋 Mes demandes →</a
+    >
+  </div>
+</ng-template>
+
 <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
-  <!-- À gauche : les conversations (une par demande, plus les questions générales) -->
-  @if (conversations().length > 0) {
-    <nav class="flex w-full flex-col gap-2 lg:w-80 lg:shrink-0" aria-label="Conversations">
+  <!-- La liste de mes discussions (« ← Mes discussions ») -->
+  @if (modeListe() && conversations().length > 0) {
+    <nav class="flex w-full max-w-3xl flex-col gap-2" aria-label="Conversations">
       @for (c of conversations(); track cle(c)) {
         <button
           type="button"
-          (click)="ouvrir(c)"
-          [attr.aria-current]="estOuverte(c) ? 'true' : null"
-          class="rounded-xl border bg-white p-4 text-left"
-          [class]="estOuverte(c) ? 'border-2 border-brand-500' : 'border-gray-200'"
+          (click)="choisir(c)"
+          class="rounded-xl border border-gray-200 bg-white p-4 text-left hover:border-brand-500"
         >
           <span class="flex items-center justify-between gap-2">
             <strong class="text-gray-900">{{ c.interlocuteurNom }}</strong>
@@ -63,60 +73,61 @@
     </nav>
   }
 
-  <!-- À droite : la discussion -->
-  @if (ouverte(); as o) {
+  <!-- Une discussion seule -->
+  @if (!modeListe() && ouverte(); as o) {
     @if (o.demandeId !== null) {
       <!-- Conversation d'une demande : messages + cartes automatiques -->
-      @if (demandeOuverte(); as d) {
-        <app-discussion-demande
-          class="block min-w-0 flex-1"
-          [demande]="d"
-          [dansMessages]="true"
-          (envoye)="chargerConversations(false)"
-        />
-      } @else {
-        <p class="m-auto text-sm text-gray-500" role="status">Chargement de la discussion…</p>
-      }
+      <div class="flex min-w-0 flex-1 flex-col gap-3">
+        <ng-container [ngTemplateOutlet]="liens" />
+        @if (demandeOuverte(); as d) {
+          <app-discussion-demande
+            class="block"
+            [demande]="d"
+            [dansMessages]="true"
+            (envoye)="chargerConversations(false)"
+          />
+        } @else {
+          <p class="text-sm text-gray-500" role="status">Chargement de la discussion…</p>
+        }
+      </div>
     } @else {
       <!-- Question générale : seulement les messages -->
       <section class="flex min-w-0 flex-1 flex-col rounded-2xl border border-gray-200 bg-white">
         <header class="border-b border-gray-100 px-5 py-4">
-          <h2 class="text-lg font-semibold">{{ o.interlocuteurNom }}</h2>
-          <span
-            class="inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
-            >Question générale</span
-          >
+          <div class="mb-3">
+            <ng-container [ngTemplateOutlet]="liens" />
+          </div>
+          <div class="flex items-center gap-3">
+            <span
+              class="flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-800"
+              aria-hidden="true"
+              >{{ initiales(o.interlocuteurNom) }}</span
+            >
+            <h2 class="text-lg font-semibold">{{ o.interlocuteurNom }}</h2>
+            <span
+              class="inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
+              >Question générale</span
+            >
+          </div>
         </header>
         <div class="flex h-96 flex-col-reverse gap-3 overflow-y-auto p-5" aria-live="polite">
           @for (m of messagesInverses(); track m.id) {
-            <div
-              class="max-w-[80%] rounded-2xl px-4 py-2"
-              [class]="
-                m.expediteurId === moiId
-                  ? 'self-end rounded-br-sm bg-brand-500 text-white'
-                  : 'self-start rounded-bl-sm bg-gray-100 text-gray-900'
-              "
-            >
-              <p class="whitespace-pre-line">{{ m.contenu }}</p>
-              <p
-                class="mt-1 text-xs"
-                [class]="m.expediteurId === moiId ? 'text-white/80' : 'text-gray-500'"
-              >
-                {{ m.dateEnvoi | date: "dd/MM 'à' HH:mm" }}
-                @if (m.expediteurId === moiId && m.lu) {
-                  · lu
-                }
-              </p>
-            </div>
+            <app-bulle-message
+              [message]="m"
+              [moiId]="moiId"
+              (modifie)="remplacer($event)"
+              (masque)="retirer($event)"
+            />
           } @empty {
             <p class="m-auto text-sm text-gray-500">Écrivez le premier message.</p>
           }
         </div>
-        <form (submit)="envoyer($event)" class="flex gap-3 border-t border-gray-100 p-4" novalidate>
-          <label for="texte" class="sr-only">Votre message</label>
-          <input id="texte" [formControl]="texte" placeholder="Écrire un message…" class="flex-1" />
-          <button class="primary-button" type="submit" [disabled]="busy()">Envoyer</button>
-        </form>
+        <app-barre-saisie
+          class="block border-t border-gray-100"
+          [busy]="busy()"
+          (texte)="envoyerTexte($event)"
+          (vocal)="envoyerVocal($event)"
+        />
       </section>
     }
   }

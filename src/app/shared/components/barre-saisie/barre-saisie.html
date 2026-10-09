@@ -1,0 +1,107 @@
+@if (erreur()) {
+  <p class="px-4 pt-3 text-sm text-red-600" role="alert">{{ erreur() }}</p>
+}
+
+@if (enregistrement()) {
+  <!-- Pendant l'enregistrement : 🗑 · ● 0:07 · ➤ -->
+  <div class="flex items-center gap-3 bg-rose-50 px-4 py-3" role="status">
+    <button
+      type="button"
+      (click)="annuler()"
+      class="flex size-10 items-center justify-center rounded-full text-gray-500 hover:bg-white"
+      aria-label="Annuler le message vocal"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+      </svg>
+    </button>
+    <span class="size-3 animate-pulse rounded-full bg-rose-600" aria-hidden="true"></span>
+    <span class="font-bold tabular-nums text-rose-600">{{ temps() }}</span>
+    <span class="flex-1 text-sm text-gray-500">Enregistrement… (2 min maximum)</span>
+    <button
+      type="button"
+      (click)="envoyerVocal()"
+      class="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white"
+      aria-label="Envoyer le message vocal"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M3 20.5 21 12 3 3.5l.01 6.6L15 12 3.01 13.9z" />
+      </svg>
+    </button>
+  </div>
+} @else {
+  <!-- La grille d'emojis, au-dessus de la barre -->
+  @if (emojisOuverts()) {
+    <div class="px-3 pt-3">
+      <app-choix-emoji (choisi)="ajouterEmoji($event)" />
+    </div>
+  }
+  <form (submit)="envoyerTexte($event)" class="flex items-center gap-2 px-4 py-3" novalidate>
+    <!-- 😊 : ouvre / ferme la grille d'emojis -->
+    <button
+      type="button"
+      (click)="basculerEmojis()"
+      class="flex size-11 shrink-0 items-center justify-center rounded-full text-2xl hover:bg-indigo-50"
+      [class.bg-indigo-50]="emojisOuverts()"
+      [attr.aria-expanded]="emojisOuverts()"
+      aria-label="Ajouter un emoji"
+    >
+      😊
+    </button>
+    <label for="champ-message" class="sr-only">Votre message</label>
+    <input
+      #saisie
+      id="champ-message"
+      [formControl]="champ"
+      [placeholder]="placeholder()"
+      autocomplete="off"
+      class="flex-1 rounded-full"
+    />
+    @if (aDuTexte()) {
+      <!-- On a écrit : flèche « envoyer » -->
+      <button
+        type="submit"
+        [disabled]="busy()"
+        class="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white disabled:opacity-60"
+        aria-label="Envoyer le message"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3 20.5 21 12 3 3.5l.01 6.6L15 12 3.01 13.9z" />
+        </svg>
+      </button>
+    } @else {
+      <!-- Champ vide : micro -->
+      <button
+        type="button"
+        (click)="demarrer()"
+        [disabled]="busy()"
+        class="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white disabled:opacity-60"
+        aria-label="Enregistrer un message vocal"
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="9" y="2" width="6" height="12" rx="3" />
+          <path d="M5 11a7 7 0 0 0 14 0M12 18v4" />
+        </svg>
+      </button>
+    }
+  </form>
+}

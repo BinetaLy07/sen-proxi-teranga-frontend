@@ -21,38 +21,43 @@
 
 @if (demandes().length > 0) {
   <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
-    <!-- ===== À gauche : la liste ===== -->
-    <nav class="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0" aria-label="Mes demandes">
-      @for (d of demandes(); track d.id) {
-        <button
-          type="button"
-          (click)="choisir(d.id)"
-          [attr.aria-current]="d.id === selectionId() ? 'true' : null"
-          class="rounded-xl border bg-white p-4 text-left"
-          [class]="d.id === selectionId() ? 'border-2 border-brand-500' : 'border-gray-200'"
-        >
-          <span class="flex items-start justify-between gap-2">
-            <strong class="text-gray-900">{{ d.serviceTitre }}</strong>
-            <span
-              class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
-              [class]="etiquettes[d.statut].classes"
-              >{{ etiquettes[d.statut].libelle }}</span
-            >
-          </span>
-          <span class="mt-1 block text-sm text-gray-600">{{ d.professionnelNom }}</span>
-          <span class="mt-1 block text-xs text-gray-500">
-            Envoyée le {{ d.dateCreation | date: 'dd/MM/yyyy' }}
-            @if (d.urgente) {
-              · <strong class="text-amber-700">urgente</strong>
-            }
-          </span>
-        </button>
-      }
-    </nav>
+    <!-- ===== La liste (cachée quand une demande est ouverte) ===== -->
+    @if (!selection()) {
+      <nav class="flex w-full max-w-3xl flex-col gap-3" aria-label="Mes demandes">
+        @for (d of demandes(); track d.id) {
+          <button
+            type="button"
+            (click)="ouvrirDemande(d.id)"
+            [attr.aria-current]="d.id === selectionId() ? 'true' : null"
+            class="rounded-xl border bg-white p-4 text-left"
+            [class]="d.id === selectionId() ? 'border-2 border-brand-500' : 'border-gray-200'"
+          >
+            <span class="flex items-start justify-between gap-2">
+              <strong class="text-gray-900">{{ d.serviceTitre }}</strong>
+              <span
+                class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+                [class]="etiquettes[d.statut].classes"
+                >{{ etiquettes[d.statut].libelle }}</span
+              >
+            </span>
+            <span class="mt-1 block text-sm text-gray-600">{{ d.professionnelNom }}</span>
+            <span class="mt-1 block text-xs text-gray-500">
+              Envoyée le {{ d.dateCreation | date: 'dd/MM/yyyy' }}
+              @if (d.urgente) {
+                · <strong class="text-amber-700">urgente</strong>
+              }
+            </span>
+          </button>
+        }
+      </nav>
+    }
 
-    <!-- ===== À droite : le détail ===== -->
+    <!-- ===== Le détail seul, avec « ← Retour » ===== -->
     @if (selection(); as d) {
       <div class="flex min-w-0 flex-1 flex-col gap-6">
+        <a routerLink="/mes-demandes" class="text-link self-start text-sm font-semibold"
+          >← Mes demandes</a
+        >
         <section class="rounded-2xl border border-gray-200 bg-white p-6">
           <div class="flex flex-wrap items-center gap-2">
             @if (d.urgente) {

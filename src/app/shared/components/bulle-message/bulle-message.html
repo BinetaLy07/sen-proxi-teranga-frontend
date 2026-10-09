@@ -1,0 +1,112 @@
+@let m = message();
+
+<!-- 🗑 : à côté de la bulle, au survol (ordinateur) ou après un toucher (téléphone) -->
+@if (peutMasquer()) {
+  <button
+    type="button"
+    (click)="demander()"
+    class="size-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-sm shadow-sm group-hover:flex focus:flex"
+    [class]="ouvert() ? 'flex' : 'hidden'"
+    aria-label="Supprimer ce message"
+    title="Supprimer"
+  >
+    🗑
+  </button>
+}
+
+<div [class]="classesBulle()" (click)="basculer()">
+  @if (lectureSeule()) {
+    <p class="text-xs font-semibold" [class]="m.supprime ? '' : 'text-gray-600'">
+      {{ m.expediteurNom }}
+    </p>
+  }
+
+  @if (m.supprime && lectureSeule()) {
+    <!-- L'administrateur voit le texte d'origine (preuve en cas de litige) -->
+    <p class="font-semibold">
+      🚫 Supprimé par {{ m.expediteurNom }}
+      @if (m.dateSuppression) {
+        le {{ m.dateSuppression | date: "dd/MM 'à' HH:mm" }}
+      }
+    </p>
+    @if (m.type === 'AUDIO') {
+      <p class="whitespace-pre-line">{{ m.contenu }} — le son a été effacé.</p>
+    } @else {
+      <p class="whitespace-pre-line">« {{ m.contenu }} »</p>
+    }
+  } @else if (m.supprime) {
+    <p>🚫 Ce message a été supprimé</p>
+  } @else if (m.type === 'AUDIO') {
+    <app-bulle-vocale [messageId]="m.id" [duree]="m.audioDuree" [moi]="deMoi()" />
+  } @else {
+    <p class="whitespace-pre-line">{{ m.contenu }}</p>
+  }
+
+  <p class="mt-1 text-xs not-italic" [class]="classesHeure()">
+    @if (m.type === 'AUDIO' && !m.supprime) {
+      Message vocal ·
+    }
+    {{ m.dateEnvoi | date: "dd/MM 'à' HH:mm" }}
+    @if (deMoi() && m.lu && !m.supprime) {
+      · lu
+    }
+  </p>
+</div>
+
+<!-- Fenêtre avec les choix possibles -->
+@if (confirmation()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titre-suppression"
+  >
+    <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+      <h2 id="titre-suppression" class="text-lg font-semibold text-gray-900">
+        {{ m.supprime ? 'Effacer cette trace ?' : 'Supprimer ce message ?' }}
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        @if (m.supprime) {
+          « Ce message a été supprimé » disparaîtra de votre écran.
+        } @else if (peutSupprimer()) {
+          « Pour tout le monde » : {{ m.destinataireNom }} verra « Ce message a été supprimé ». «
+          Pour moi » : il disparaît seulement de votre écran.
+        } @else {
+          Il disparaîtra seulement de votre écran.
+          {{ deMoi() ? m.destinataireNom : m.expediteurNom }} le verra toujours.
+        }
+      </p>
+      @if (erreur()) {
+        <p class="mt-2 text-sm text-red-600" role="alert">{{ erreur() }}</p>
+      }
+      <div class="mt-5 flex flex-col gap-2">
+        @if (peutSupprimer()) {
+          <button
+            type="button"
+            class="rounded-lg bg-rose-600 px-4 py-2.5 font-semibold text-white disabled:opacity-60"
+            (click)="supprimer()"
+            [disabled]="busy()"
+          >
+            Supprimer pour tout le monde
+          </button>
+        }
+        <button
+          type="button"
+          class="rounded-lg px-4 py-2.5 font-semibold disabled:opacity-60"
+          [class]="
+            peutSupprimer()
+              ? 'border border-gray-300 bg-white text-rose-700'
+              : 'bg-rose-600 text-white'
+          "
+          (click)="masquer()"
+          [disabled]="busy()"
+        >
+          Supprimer pour moi
+        </button>
+        <button type="button" class="secondary-button justify-center" (click)="annuler()">
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+}

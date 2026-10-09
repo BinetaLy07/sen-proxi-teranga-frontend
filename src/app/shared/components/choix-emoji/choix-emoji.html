@@ -1,0 +1,23 @@
+<div
+  class="w-full rounded-2xl border border-gray-200 bg-white p-3 shadow-xl"
+  role="dialog"
+  aria-label="Choisir un emoji"
+>
+  @for (g of groupes; track g.titre) {
+    <p class="mb-1 mt-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+      {{ g.titre }}
+    </p>
+    <div class="grid grid-cols-8 gap-0.5 sm:grid-cols-12">
+      @for (e of g.emojis; track e) {
+        <button
+          type="button"
+          (click)="choisi.emit(e)"
+          class="rounded-lg py-1 text-2xl hover:bg-indigo-50"
+          [attr.aria-label]="'Ajouter ' + e"
+        >
+          {{ e }}
+        </button>
+      }
+    </div>
+  }
+</div>
