@@ -23,6 +23,7 @@ import {
   STATUTS_ANNULABLES,
 } from '../../data-access/demande-statuts';
 import { BoutonDiscussion } from '../../components/bouton-discussion/bouton-discussion';
+import { DiscussionDemande } from '../../components/discussion-demande/discussion-demande';
 import { RendezVousApiService } from '../../../rendez-vous/data-access/rendez-vous-api.service';
 import {
   FILTRES_PRO,
@@ -44,9 +45,25 @@ const EN_COURS: StatutDemande[] = [
 ];
 const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
 
+// « À traiter » : c'est au pro d'agir (répondre, faire le devis, fixer le rendez-vous,
+// commencer ou finir les travaux). Pas quand il attend le client (devis envoyé, travaux à confirmer).
+const A_TRAITER: StatutDemande[] = ['CREEE', 'ACCEPTEE', 'DEVIS_ACCEPTE', 'PLANIFIEE', 'EN_COURS'];
+
+// L'ordre de travail : les nouvelles d'abord (URGENT en tête, puis celle qui expire le plus tôt),
+// ensuite les autres dans l'ordre de la liste
+function ordreDeTravail(liste: Demande[]): Demande[] {
+  const cle = (d: Demande) => d.dateExpiration ?? d.dateCreation;
+  const nouvelles = liste
+    .filter((d) => d.statut === 'CREEE')
+    .sort((a, b) => Number(b.urgente) - Number(a.urgente) || cle(a).localeCompare(cle(b)));
+  return [...nouvelles, ...liste.filter((d) => d.statut !== 'CREEE')];
+}
+
 // « Demandes reçues » : l'espace de travail du professionnel.
-// À gauche la liste (avec filtres), à droite la demande choisie et ses blocs
-// (devis, rendez-vous, paiement, avis) qui apparaissent selon le statut.
+// La liste (avec filtres), ou le dossier d'une demande :
+// en-tête (avec « Annuler »), « À faire maintenant », le bloc de l'étape (devis, rendez-vous,
+// paiement, avis), le besoin ; à droite le client et l'historique.
+// Après une action : « Traiter la suivante » ou « Choisir une autre demande ».
 @Component({
   imports: [
     DatePipe,
@@ -58,6 +75,7 @@ const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
     PaiementPro,
     AvisPro,
     BoutonDiscussion,
+    DiscussionDemande,
   ],
   templateUrl: './demandes-recues.html',
 })
@@ -117,7 +135,7 @@ export class DemandesRecues {
     }
     switch (this.filtre()) {
       case 'nouvelles':
-        return liste.filter((d) => d.statut === 'CREEE');
+        return ordreDeTravail(liste.filter((d) => d.statut === 'CREEE'));
       case 'en-cours':
         return liste.filter((d) => EN_COURS.includes(d.statut));
       case 'terminees':
@@ -128,9 +146,18 @@ export class DemandesRecues {
             d.statut !== 'CREEE' && !EN_COURS.includes(d.statut) && !TERMINEES.includes(d.statut),
         );
       default:
-        return liste;
+        return ordreDeTravail(liste);
     }
   });
+
+  // Les autres demandes à traiter (sans celle qui est ouverte), dans l'ordre de travail,
+  // et la suivante : pour enchaîner sans revenir à la liste
+  readonly aTraiterAutres = computed(() =>
+    ordreDeTravail(
+      this.demandes().filter((d) => A_TRAITER.includes(d.statut) && d.id !== this.selectionId()),
+    ),
+  );
+  readonly suivante = computed(() => this.aTraiterAutres()[0] ?? null);
 
   // ---------- La demande choisie ----------
   readonly selectionId = signal<number | null>(null);
@@ -232,6 +259,7 @@ export class DemandesRecues {
   }
 
   choisir(id: number, garderMessages = false) {
+    if (id !== this.selectionId()) this.devisOuvert.set(false);
     this.selectionId.set(id);
     this.action.set(null);
     this.motif.reset();
@@ -287,7 +315,41 @@ export class DemandesRecues {
     });
   }
 
+  // « Préparer le devis ↓ » : ouvre le formulaire du devis et descend jusqu'à lui ;
+  // « Fermer le devis » le cache (la page reste légère tant qu'on ne l'utilise pas)
+  readonly devisOuvert = signal(false);
+
+  basculerDevis() {
+    const ouvrir = !this.devisOuvert();
+    this.devisOuvert.set(ouvrir);
+    if (ouvrir) {
+      setTimeout(() =>
+        this.document.getElementById('bloc-devis')?.scrollIntoView({ behavior: 'smooth' }),
+      );
+    }
+  }
+
   // ===== Petites aides pour l'affichage =====
+
+  // « À faire maintenant » une fois la demande acceptée : la prochaine chose, selon le type
+  consigneAcceptee(d: Demande) {
+    if (d.typeTarif === 'SUR_DEVIS') return `Préparez et envoyez le devis à ${d.clientNom}.`;
+    if (d.typeTarif === 'FIXE') {
+      const prix = d.montant != null ? ` (${this.montant(d.montant)})` : '';
+      return `Envoyez le devis au prix fixe${prix} à ${d.clientNom}, puis fixez le jour ensemble.`;
+    }
+    return `Échangez avec ${d.clientNom} si besoin, puis envoyez votre prix (devis).`;
+  }
+
+  // « Ken Bougoul » -> « KB »
+  initiales(nom: string) {
+    return nom
+      .split(' ')
+      .filter((mot) => mot.length > 0)
+      .slice(0, 2)
+      .map((mot) => mot[0].toUpperCase())
+      .join('');
+  }
 
   noteTexte(valeur: number) {
     return valeur.toFixed(1).replace('.', ',');

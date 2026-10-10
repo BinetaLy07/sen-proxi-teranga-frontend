@@ -172,171 +172,96 @@
     </nav>
   }
 
-  <!-- ===== Le détail seul, avec « ← Retour » ===== -->
+  <!-- ===== Le dossier d'une demande, avec « ← Retour » ===== -->
   @if (selection(); as d) {
     <div class="flex min-w-0 flex-1 flex-col gap-6">
-      <a
-        routerLink="/demandes-recues"
-        [queryParams]="retour()"
-        class="text-link self-start text-sm font-semibold"
-        >← {{ filtreCarte() ? filtresCartes[filtreCarte()!].libelle : 'Demandes reçues' }}</a
-      >
-      <section class="rounded-2xl border border-gray-200 bg-white p-6">
-        <div class="flex flex-wrap items-center gap-2">
-          @if (d.urgente) {
-            <span
-              class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800"
-              >URGENT</span
-            >
-          }
-          <span
-            class="rounded-full px-2 py-0.5 text-xs font-semibold"
-            [class]="etiquettes[d.statut].classes"
-            >{{ etiquettes[d.statut].libelle }}</span
-          >
-          <span
-            class="rounded-full px-2 py-0.5 text-xs font-semibold"
-            [class]="parcours(d).classes"
-            >{{ parcours(d).badge }}</span
-          >
-        </div>
-        <h2 class="mt-3 text-2xl font-semibold text-gray-900">{{ d.serviceTitre }}</h2>
-        <p class="mt-1 text-sm text-gray-600">
-          Demande n° {{ d.id }} · {{ d.clientNom }}
-          @if (d.statut !== 'CREEE') {
-            · {{ d.clientTelephone }}
-          }
-          · reçue le {{ d.dateCreation | date: "dd/MM/yyyy 'à' HH:mm" }}
-        </p>
-        <!-- Ce que le pro doit faire, tant que rien n'est encore engagé -->
-        @if (d.statut === 'CREEE' || d.statut === 'ACCEPTEE') {
-          <p class="mt-4 rounded-xl p-3 text-sm" [class]="parcours(d).classes">
-            <span aria-hidden="true">👉</span> {{ parcours(d).consigne }}
-          </p>
-        }
-
-        @if (d.statut === 'CREEE' && d.dateExpiration) {
-          <div class="notice">
-            <strong
-              >Répondez avant le {{ d.dateExpiration | date: "dd/MM/yyyy 'à' HH:mm" }}.</strong
-            >
-            Sans réponse, la demande expire et le client est prévenu.
-          </div>
-        }
-
-        <!-- Où on en est (quand c'est au client d'agir) -->
-        @if (attente(); as phrase) {
-          <p class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-gray-700">
-            {{ phrase }}
-          </p>
-        }
-
-        <!-- La discussion est dans la page Messages -->
-        <app-bouton-discussion [demande]="d" />
-
-        <!-- Le détail, replié (ouvert pour une nouvelle demande : il faut le lire pour répondre) -->
-        <details class="mt-4 border-t border-gray-100 pt-3" [open]="d.statut === 'CREEE'">
-          <summary class="text-link cursor-pointer text-sm">Voir le détail</summary>
-          <h3 class="mt-3 font-semibold">Le besoin</h3>
-          <p class="mt-1 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
-          <app-photos-demande [demandeId]="d.id" />
-
-          <dl class="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-            <div>
-              <dt class="text-gray-500">Adresse</dt>
-              <dd class="font-medium text-gray-900">
-                {{ d.adresse }}
-                @if (d.zoneNom) {
-                  ({{ d.zoneNom }})
-                }
-              </dd>
-            </div>
-            <div>
-              <dt class="text-gray-500">Date souhaitée</dt>
-              <dd class="font-medium text-gray-900">{{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}</dd>
-            </div>
-            <div>
-              <dt class="text-gray-500">Visite avant devis</dt>
-              <dd class="font-medium text-gray-900">
-                @if (d.visiteDemandee) {
-                  Demandée
-                  @if (d.fraisVisite !== null) {
-                    · {{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }}
-                  }
-                } @else {
-                  Non demandée
-                }
-              </dd>
-            </div>
-          </dl>
-        </details>
-
-        @switch (d.statut) {
-          @case ('REFUSEE') {
-            <div class="notice error"><strong>Refusée :</strong> {{ d.motifRefus }}</div>
-          }
-          @case ('ANNULEE') {
-            <div class="notice"><strong>Annulée :</strong> {{ d.motifAnnulation }}</div>
-          }
-          @case ('EXPIREE') {
-            <div class="notice">Vous n'avez pas répondu à temps : la demande a expiré.</div>
-          }
-          @case ('EN_LITIGE') {
-            <div class="notice error">Paiement contesté : l'administrateur examine le dossier.</div>
-          }
-        }
-
-        <!-- Après un litige : la décision de l'administrateur -->
-        @if (d.resolutionLitige) {
-          <div class="notice">
-            <strong>Décision de l'administrateur :</strong> {{ d.resolutionLitige }}
-          </div>
-        }
-
-        @if (actionSuccess()) {
-          <div class="notice success" role="status">{{ actionSuccess() }}</div>
-        }
-        @if (actionError()) {
-          <div class="notice error" role="alert">{{ actionError() }}</div>
-        }
-
-        <!-- Nouvelle demande : accepter ou refuser -->
-        @if (d.statut === 'CREEE' && !action()) {
-          @if (d.visiteDemandee) {
-            <div class="mt-5 max-w-xs">
-              <label for="frais-visite"
-                >Frais de visite (F)
-                <span class="font-normal text-gray-500">(vide = gratuite)</span></label
-              >
-              <input id="frais-visite" type="number" min="0" [formControl]="fraisVisite" />
-            </div>
-          }
-          <div class="mt-5 flex flex-wrap gap-3">
-            <button type="button" class="primary-button" (click)="accepter()" [disabled]="busy()">
-              Accepter la demande
-            </button>
-            <button type="button" class="secondary-button" (click)="ouvrir('refus')">
-              Refuser
-            </button>
-          </div>
-          <p class="mt-3 text-xs text-gray-500">
-            Après avoir accepté, vous envoyez un devis. Pour refuser, un motif est demandé : le
-            client le verra.
-          </p>
-        }
-
-        @if (annulable() && !action()) {
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <a
+          routerLink="/demandes-recues"
+          [queryParams]="retour()"
+          class="text-link text-sm font-semibold"
+          >← {{ filtreCarte() ? filtresCartes[filtreCarte()!].libelle : 'Demandes reçues' }}</a
+        >
+        @if (suivante(); as s) {
           <button
             type="button"
-            class="mt-5 text-sm font-medium text-red-700"
-            (click)="ouvrir('annulation')"
+            class="text-link text-sm font-semibold"
+            (click)="ouvrirDemande(s.id)"
           >
-            Annuler cette demande
+            Demande suivante ({{ aTraiterAutres().length }} à traiter) →
           </button>
         }
+      </div>
 
+      <!-- Après une action : le message, puis « la suivante » ou « une autre » -->
+      @if (actionSuccess()) {
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5" role="status">
+          <p class="font-semibold text-emerald-800">✅ {{ actionSuccess() }}</p>
+          <p class="mt-1 text-sm text-gray-700">
+            @if (aTraiterAutres().length > 0) {
+              Il vous reste
+              <strong
+                >{{ aTraiterAutres().length }} demande{{ aTraiterAutres().length > 1 ? 's' : '' }} à
+                traiter</strong
+              >.
+            } @else {
+              Aucune autre demande à traiter pour le moment. 👍
+            }
+          </p>
+          <div class="mt-3 flex flex-wrap gap-3">
+            @if (suivante(); as s) {
+              <button type="button" class="primary-button" (click)="ouvrirDemande(s.id)">
+                Traiter la suivante →
+              </button>
+            }
+            <a routerLink="/demandes-recues" [queryParams]="retour()" class="secondary-button"
+              >← Choisir une autre demande</a
+            >
+          </div>
+        </div>
+      }
+
+      <!-- 1. L'en-tête : statut, type, titre… et « Annuler » à côté de la demande -->
+      <section class="rounded-2xl border border-gray-200 bg-white p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              @if (d.urgente) {
+                <span
+                  class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800"
+                  >URGENT</span
+                >
+              }
+              <span
+                class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                [class]="etiquettes[d.statut].classes"
+                >{{ etiquettes[d.statut].libelle }}</span
+              >
+              <span
+                class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                [class]="parcours(d).classes"
+                >{{ parcours(d).badge }}</span
+              >
+            </div>
+            <h2 class="mt-3 text-2xl font-semibold text-gray-900">{{ d.serviceTitre }}</h2>
+            <p class="mt-1 text-sm text-gray-600">
+              Demande n° {{ d.id }} · reçue le {{ d.dateCreation | date: "dd/MM/yyyy 'à' HH:mm" }}
+            </p>
+          </div>
+          @if (annulable() && !action()) {
+            <button
+              type="button"
+              class="shrink-0 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+              (click)="ouvrir('annulation')"
+            >
+              ✕ Annuler la demande
+            </button>
+          }
+        </div>
+
+        <!-- Le motif (refus ou annulation) : le client le verra -->
         @if (action(); as a) {
-          <div class="mt-5">
+          <div class="mt-5 border-t border-gray-100 pt-5">
             <label for="motif-pro">
               {{ a === 'refus' ? 'Pourquoi refusez-vous ?' : 'Pourquoi annulez-vous ?' }}
               <span class="required">*</span>
@@ -366,13 +291,196 @@
             </div>
           </div>
         }
+        @if (actionError()) {
+          <div class="notice error" role="alert">{{ actionError() }}</div>
+        }
       </section>
 
-      <!-- Les blocs suivants s'affichent seuls quand le statut le permet -->
-      <app-devis-pro id="bloc-devis" [demande]="d" (actualise)="apresAction($event)" />
-      <app-rendez-vous-pro [demande]="d" (actualise)="apresAction($event)" />
-      <app-paiement-pro [demande]="d" (actualise)="apresAction($event)" />
-      <app-avis-pro [demande]="d" (actualise)="apresAction($event)" />
+      <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
+        <!-- ===== À gauche : ce qu'il faut faire, le bloc de l'étape, le besoin ===== -->
+        <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
+          <!-- 2. À faire maintenant -->
+          @if (d.statut === 'CREEE' || d.statut === 'ACCEPTEE') {
+            <section class="rounded-2xl border border-indigo-200 bg-indigo-50 p-6 text-indigo-900">
+              <h3 class="font-bold"><span aria-hidden="true">👉</span> À faire maintenant</h3>
+              @if (d.statut === 'CREEE') {
+                <p class="mt-2">
+                  {{ d.clientNom }} attend votre réponse. Lisez le besoin, puis acceptez ou refusez.
+                  @if (d.dateExpiration) {
+                    <strong>Avant le {{ d.dateExpiration | date: "dd/MM/yyyy 'à' HH:mm" }}.</strong>
+                  }
+                </p>
+                @if (!action()) {
+                  @if (d.visiteDemandee) {
+                    <div class="mt-4 max-w-xs">
+                      <label for="frais-visite"
+                        >Frais de visite (F)
+                        <span class="font-normal text-gray-500">(vide = gratuite)</span></label
+                      >
+                      <input id="frais-visite" type="number" min="0" [formControl]="fraisVisite" />
+                    </div>
+                  }
+                  <div class="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      class="primary-button"
+                      (click)="accepter()"
+                      [disabled]="busy()"
+                    >
+                      Accepter
+                    </button>
+                    <button type="button" class="secondary-button" (click)="ouvrir('refus')">
+                      Refuser
+                    </button>
+                  </div>
+                  <p class="mt-3 text-xs text-indigo-800/80">
+                    Sans réponse avant la limite, la demande expire et le client est prévenu.
+                  </p>
+                }
+              } @else {
+                <p class="mt-2">{{ consigneAcceptee(d) }}</p>
+                <button
+                  type="button"
+                  class="mt-4"
+                  [class]="devisOuvert() ? 'secondary-button' : 'primary-button'"
+                  (click)="basculerDevis()"
+                >
+                  {{ devisOuvert() ? 'Fermer le devis' : 'Préparer le devis ↓' }}
+                </button>
+              }
+            </section>
+          }
+
+          <!-- Quand c'est au client d'agir -->
+          @if (attente(); as phrase) {
+            <p class="rounded-2xl border border-gray-200 bg-gray-50 p-5 text-gray-700">
+              <span aria-hidden="true">⏳</span> {{ phrase }}
+            </p>
+          }
+
+          @switch (d.statut) {
+            @case ('REFUSEE') {
+              <div class="notice error mt-0"><strong>Refusée :</strong> {{ d.motifRefus }}</div>
+            }
+            @case ('ANNULEE') {
+              <div class="notice mt-0"><strong>Annulée :</strong> {{ d.motifAnnulation }}</div>
+            }
+            @case ('EXPIREE') {
+              <div class="notice mt-0">Vous n'avez pas répondu à temps : la demande a expiré.</div>
+            }
+            @case ('EN_LITIGE') {
+              <div class="notice error mt-0">
+                Paiement contesté : l'administrateur examine le dossier.
+              </div>
+            }
+          }
+          @if (d.resolutionLitige) {
+            <div class="notice mt-0">
+              <strong>Décision de l'administrateur :</strong> {{ d.resolutionLitige }}
+            </div>
+          }
+
+          <!-- 3. Le bloc de l'étape : il s'affiche seul quand le statut le permet -->
+          <!-- (empty:hidden : un bloc vide ne laisse pas de trou) -->
+          <!-- Demande acceptée : le formulaire du devis s'ouvre seulement avec « Préparer le devis » -->
+          @if (d.statut !== 'ACCEPTEE' || devisOuvert()) {
+            <app-devis-pro
+              id="bloc-devis"
+              class="empty:hidden"
+              [demande]="d"
+              (actualise)="apresAction($event)"
+            />
+          }
+          <app-rendez-vous-pro
+            class="empty:hidden"
+            [demande]="d"
+            (actualise)="apresAction($event)"
+          />
+          <app-paiement-pro class="empty:hidden" [demande]="d" (actualise)="apresAction($event)" />
+          <app-avis-pro class="empty:hidden" [demande]="d" (actualise)="apresAction($event)" />
+
+          <!-- 4. Le besoin, toujours visible -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-6">
+            <h3 class="font-bold"><span aria-hidden="true">📋</span> Le besoin</h3>
+            <p class="mt-3 rounded-lg bg-gray-50 p-3 text-gray-700">{{ d.description }}</p>
+            <app-photos-demande [demandeId]="d.id" />
+            <dl class="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt class="text-gray-500">Adresse</dt>
+                <dd class="font-medium text-gray-900">
+                  {{ d.adresse }}
+                  @if (d.zoneNom) {
+                    ({{ d.zoneNom }})
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt class="text-gray-500">Date souhaitée</dt>
+                <dd class="font-medium text-gray-900">
+                  {{ d.dateSouhaitee | date: 'dd/MM/yyyy' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-gray-500">Visite avant devis</dt>
+                <dd class="font-medium text-gray-900">
+                  @if (d.visiteDemandee) {
+                    Demandée
+                    @if (d.fraisVisite !== null) {
+                      · {{ d.fraisVisite === 0 ? 'gratuite' : montant(d.fraisVisite) }}
+                    }
+                  } @else {
+                    Non demandée
+                  }
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <!-- ===== À droite : le client, l'historique ===== -->
+        <div class="flex min-w-0 flex-col gap-6">
+          <!-- 5. Le client -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-6">
+            <h3 class="font-bold"><span aria-hidden="true">👤</span> Le client</h3>
+            <div class="mt-3 flex items-center gap-3">
+              <span
+                class="flex size-11 shrink-0 items-center justify-center rounded-full bg-pink-100 font-bold text-pink-800"
+                aria-hidden="true"
+                >{{ initiales(d.clientNom) }}</span
+              >
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900">{{ d.clientNom }}</p>
+                <p class="text-sm text-gray-600">
+                  @if (d.statut === 'CREEE') {
+                    📞 visible après acceptation
+                  } @else {
+                    📞 {{ d.clientTelephone }}
+                  }
+                  @if (d.zoneNom) {
+                    · {{ d.zoneNom }}
+                  }
+                </p>
+              </div>
+            </div>
+            <app-bouton-discussion [demande]="d" />
+            @if (d.statut !== 'CREEE' && d.clientTelephone) {
+              <a
+                [href]="'tel:' + d.clientTelephone"
+                class="mt-3 flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-3 font-semibold text-gray-800 hover:bg-gray-50"
+                ><span aria-hidden="true">📞</span> Appeler</a
+              >
+            }
+          </section>
+
+          <!-- 6. L'historique, replié -->
+          <details class="rounded-2xl border border-gray-200 bg-white p-5">
+            <summary class="text-link cursor-pointer text-sm font-semibold">
+              🕓 Historique de la demande
+            </summary>
+            <app-discussion-demande class="mt-3 block" [demande]="d" [historiqueSeul]="true" />
+          </details>
+        </div>
+      </div>
     </div>
   }
 </div>

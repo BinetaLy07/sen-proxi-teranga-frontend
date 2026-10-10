@@ -2,7 +2,9 @@
   <header class="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
     <div class="min-w-0">
       <h3 class="text-xl font-semibold">
-        @if (lectureSeule()) {
+        @if (historiqueSeul()) {
+          🕓 Historique de la demande
+        } @else if (lectureSeule()) {
           Discussion entre {{ demande().clientNom }} et {{ demande().professionnelNom }}
         } @else if (dansMessages()) {
           {{ autreNom() }}
@@ -24,6 +26,8 @@
         class="text-link shrink-0 text-sm"
         >Voir la demande →</a
       >
+    } @else if (historiqueSeul()) {
+      <span class="text-sm text-gray-500">{{ elements().length }} étape(s)</span>
     } @else {
       <span class="text-sm text-gray-500">{{ messages().length }} message(s)</span>
     }
@@ -82,7 +86,9 @@
     }
   </div>
 
-  @if (lectureSeule()) {
+  @if (historiqueSeul()) {
+    <!-- Pas de barre : on écrit dans « Messages » -->
+  } @else if (lectureSeule()) {
     <p class="border-t border-gray-100 px-6 py-3 text-sm text-gray-500">
       Lecture seule : l'administrateur peut lire la discussion, mais pas y écrire.
     </p>

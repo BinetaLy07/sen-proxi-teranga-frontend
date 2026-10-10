@@ -31,111 +31,127 @@
     <a
       [routerLink]="pageDemandes"
       class="rounded-lg bg-indigo-50 px-3 py-1.5 text-brand-500 hover:bg-indigo-100"
-      >📋 Mes demandes →</a
+      >📋 {{ estPro ? 'Demandes reçues' : 'Mes demandes' }} →</a
     >
   </div>
 </ng-template>
 
 <div class="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
-  <!-- La liste de mes discussions (« ← Mes discussions ») -->
+  <!-- La liste de mes discussions : une ligne par personne -->
   @if (modeListe() && conversations().length > 0) {
-    <nav class="flex w-full max-w-3xl flex-col gap-2" aria-label="Conversations">
-      @for (c of conversations(); track cle(c)) {
+    <nav class="flex w-full max-w-3xl flex-col gap-2" aria-label="Mes discussions">
+      @for (c of conversations(); track c.interlocuteurId) {
         <button
           type="button"
           (click)="choisir(c)"
-          class="rounded-xl border border-gray-200 bg-white p-4 text-left hover:border-brand-500"
+          class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left hover:border-brand-500"
         >
-          <span class="flex items-center justify-between gap-2">
-            <strong class="text-gray-900">{{ c.interlocuteurNom }}</strong>
-            @if (c.nombreNonLus > 0) {
-              <span
-                class="flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
-                >{{ c.nombreNonLus }}</span
-              >
-            }
-          </span>
-          @if (c.demandeId !== null) {
-            <span
-              class="mt-1 inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-800"
-              >Demande n° {{ c.demandeId }} · {{ c.demandeTitre }}</span
-            >
-          } @else {
-            <span
-              class="mt-1 inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
-              >Question générale</span
-            >
-          }
-          <span class="mt-1 block truncate text-sm text-gray-600">
-            {{ c.dernierMessageEnvoyeParMoi ? 'Vous : ' : '' }}{{ c.dernierMessage }}
-          </span>
-          <span class="mt-1 block text-xs text-gray-500">
-            {{ c.interlocuteurRole === 'PROFESSIONNEL' ? 'Professionnel' : 'Client' }} ·
-            {{ c.dateDernierMessage | date: "dd/MM 'à' HH:mm" }}
+          <span
+            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-800"
+            aria-hidden="true"
+            >{{ initiales(c.interlocuteurNom) }}</span
+          >
+          <span class="min-w-0 flex-1">
+            <span class="flex items-center justify-between gap-2">
+              <strong class="text-gray-900">{{ c.interlocuteurNom }}</strong>
+              <span class="shrink-0 text-xs text-gray-500">{{
+                c.dateDernierMessage | date: "dd/MM 'à' HH:mm"
+              }}</span>
+            </span>
+            <span class="mt-0.5 flex items-center justify-between gap-2">
+              <span class="truncate text-sm text-gray-600">
+                {{ c.dernierMessageEnvoyeParMoi ? 'Vous : ' : '' }}{{ c.dernierMessage }}
+              </span>
+              @if (c.nombreNonLus > 0) {
+                <span
+                  class="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-bold text-white"
+                  >{{ c.nombreNonLus }}<span class="sr-only"> non lus</span></span
+                >
+              }
+            </span>
+            <span class="mt-0.5 block text-xs text-gray-500">
+              {{ c.interlocuteurRole === 'PROFESSIONNEL' ? 'Professionnel' : 'Client' }}
+            </span>
           </span>
         </button>
       }
     </nav>
   }
 
-  <!-- Une discussion seule -->
+  <!-- Une discussion seule : seulement les messages -->
   @if (!modeListe() && ouverte(); as o) {
-    @if (o.demandeId !== null) {
-      <!-- Conversation d'une demande : messages + cartes automatiques -->
-      <div class="flex min-w-0 flex-1 flex-col gap-3">
-        <ng-container [ngTemplateOutlet]="liens" />
-        @if (demandeOuverte(); as d) {
-          <app-discussion-demande
-            class="block"
-            [demande]="d"
-            [dansMessages]="true"
-            [brouillon]="brouillon()"
-            (envoye)="chargerConversations(false)"
-          />
-        } @else {
-          <p class="text-sm text-gray-500" role="status">Chargement de la discussion…</p>
-        }
-      </div>
-    } @else {
-      <!-- Question générale : seulement les messages -->
-      <section class="flex min-w-0 flex-1 flex-col rounded-2xl border border-gray-200 bg-white">
-        <header class="border-b border-gray-100 px-5 py-4">
-          <div class="mb-3">
-            <ng-container [ngTemplateOutlet]="liens" />
-          </div>
-          <div class="flex items-center gap-3">
-            <span
-              class="flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-800"
-              aria-hidden="true"
-              >{{ initiales(o.interlocuteurNom) }}</span
+    <section class="flex min-w-0 flex-1 flex-col rounded-2xl border border-gray-200 bg-white">
+      <header class="border-b border-gray-100 px-5 py-4">
+        <div class="mb-3">
+          <ng-container [ngTemplateOutlet]="liens" />
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span
+            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-800"
+            aria-hidden="true"
+            >{{ initiales(o.interlocuteurNom) }}</span
+          >
+          <h2 class="flex-1 text-lg font-semibold">{{ o.interlocuteurNom }}</h2>
+          <!-- Le dossier de la demande dont on parle -->
+          @if (sujetDemande(); as d) {
+            <a
+              [routerLink]="pageDemandes"
+              [queryParams]="{ demande: d.id }"
+              class="text-link text-sm font-semibold"
+              >Voir la demande « {{ d.serviceTitre }} » →</a
             >
-            <h2 class="text-lg font-semibold">{{ o.interlocuteurNom }}</h2>
-            <span
-              class="inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
-              >Question générale</span
-            >
-          </div>
-        </header>
-        <div class="flex h-96 flex-col-reverse gap-3 overflow-y-auto p-5" aria-live="polite">
-          @for (m of messagesInverses(); track m.id) {
-            <app-bulle-message
-              [message]="m"
-              [moiId]="moiId"
-              (modifie)="remplacer($event)"
-              (masque)="retirer($event)"
-            />
-          } @empty {
-            <p class="m-auto text-sm text-gray-500">Écrivez le premier message.</p>
           }
         </div>
-        <app-barre-saisie
-          class="block border-t border-gray-100"
-          [busy]="busy()"
-          [texteInitial]="brouillon()"
-          (texte)="envoyerTexte($event)"
-          (vocal)="envoyerVocal($event)"
-        />
-      </section>
-    }
+      </header>
+
+      <div class="flex h-96 flex-col-reverse gap-3 overflow-y-auto p-5" aria-live="polite">
+        @for (l of lignesInverses(); track l.message.id) {
+          <app-bulle-message
+            [message]="l.message"
+            [moiId]="moiId"
+            (modifie)="remplacer($event)"
+            (masque)="retirer($event)"
+          />
+          <!-- (colonne inversée : l'étiquette s'affiche AU-DESSUS du message) -->
+          @if (l.etiquette) {
+            <p
+              class="self-center rounded-full bg-gray-100 px-3 py-0.5 text-xs font-semibold text-gray-600"
+            >
+              {{ l.etiquette }}
+            </p>
+          }
+        } @empty {
+          <p class="m-auto text-sm text-gray-500">Écrivez le premier message.</p>
+        }
+      </div>
+
+      <!-- De quoi je parle : une de nos demandes, ou une question générale -->
+      @if (demandesCommunes().length > 0) {
+        <div class="flex items-center gap-2 border-t border-gray-100 px-5 pt-3 text-sm">
+          <label for="sujet" class="mb-0 shrink-0 text-gray-600">À propos de :</label>
+          <select
+            id="sujet"
+            class="h-9 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-2 text-sm"
+            [ngModel]="sujet()"
+            (ngModelChange)="choisirSujet($event)"
+          >
+            <option [ngValue]="null">💬 Question générale</option>
+            @for (d of demandesCommunes(); track d.id) {
+              <option [ngValue]="d.id">📋 {{ d.serviceTitre }} (n° {{ d.id }})</option>
+            }
+          </select>
+        </div>
+      }
+      <app-barre-saisie
+        class="block"
+        [class.border-t]="demandesCommunes().length === 0"
+        [class.border-gray-100]="demandesCommunes().length === 0"
+        [placeholder]="'Écrire à ' + o.interlocuteurNom + '…'"
+        [busy]="busy()"
+        [texteInitial]="brouillon()"
+        (texte)="envoyerTexte($event)"
+        (vocal)="envoyerVocal($event)"
+      />
+    </section>
   }
 </div>

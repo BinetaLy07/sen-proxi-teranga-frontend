@@ -16,6 +16,7 @@ import { PaiementClient } from '../../components/paiement-client/paiement-client
 import { PhotosDemande } from '../../components/photos-demande/photos-demande';
 import { SuiviRendezVous } from '../../components/suivi-rendez-vous/suivi-rendez-vous';
 import { BoutonDiscussion } from '../../components/bouton-discussion/bouton-discussion';
+import { DiscussionDemande } from '../../components/discussion-demande/discussion-demande';
 import { RendezVousApiService } from '../../../rendez-vous/data-access/rendez-vous-api.service';
 import {
   demandesEnCours,
@@ -41,6 +42,7 @@ type ActionAvecMotif = 'revision' | 'refus' | 'annulation';
     AvisClient,
     PhotosDemande,
     BoutonDiscussion,
+    DiscussionDemande,
   ],
   templateUrl: './mes-demandes.html',
 })

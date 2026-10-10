@@ -15,6 +15,7 @@ export interface Message {
   // (l'administrateur, lui, reçoit le texte d'origine)
   supprime: boolean;
   dateSuppression: string | null;
+  demandeTitre: string | null; // le titre de la demande dont on parle (null : question générale)
 }
 
 // Un message vocal prêt à partir : le son enregistré + sa durée en secondes
@@ -24,7 +25,8 @@ export interface Vocal {
 }
 
 // Une conversation dans la liste (backend : ConversationResponse).
-// Avec la même personne : une conversation par demande, plus les « questions générales ».
+// UNE conversation par personne (toutes ses demandes et questions générales ensemble).
+// demandeId / demandeTitre : la demande dont parle le dernier message.
 export interface Conversation {
   interlocuteurId: number;
   interlocuteurNom: string;

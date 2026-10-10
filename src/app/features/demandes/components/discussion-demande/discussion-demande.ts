@@ -56,6 +56,7 @@ const BORDURES: Record<CarteAction['couleur'], string> = {
 // On y voit les messages écrits ET, automatiquement, les actions faites avec
 // les boutons (devis, rendez-vous, travaux, paiement) sous forme de petites cartes.
 // L'administrateur peut la lire (lectureSeule) pour trancher un litige.
+// Dans le dossier d'une demande (historiqueSeul) : seulement les cartes, comme un journal.
 @Component({
   selector: 'app-discussion-demande',
   imports: [DatePipe, RouterLink, BarreSaisie, BulleMessage],
@@ -73,6 +74,9 @@ export class DiscussionDemande {
 
   readonly demande = input.required<Demande>();
   readonly lectureSeule = input(false);
+  // Dans le dossier d'une demande : seulement l'historique (les cartes : devis, rendez-vous,
+  // travaux, paiement), sans les messages ni la barre (les messages sont dans « Messages »)
+  readonly historiqueSeul = input(false);
   // Dans la page Messages : on affiche la demande concernée et un lien « Voir la demande »
   readonly dansMessages = input(false);
   // Un message déjà écrit à mettre dans la barre du bas (ex. après « Réserver »)
@@ -106,7 +110,7 @@ export class DiscussionDemande {
   // Tous les éléments, du plus ancien au plus récent
   readonly elements = computed<Element[]>(() => {
     const liste: Element[] = [
-      ...this.messages().map((m) => ({
+      ...(this.historiqueSeul() ? [] : this.messages()).map((m) => ({
         sorte: 'message' as const,
         cle: 'm' + m.id,
         date: m.dateEnvoi,
@@ -130,7 +134,9 @@ export class DiscussionDemande {
     // Toutes les 15 secondes, on regarde s'il y a de nouveaux messages
     interval(15000)
       .pipe(takeUntilDestroyed())
-      .subscribe(() => this.chargerMessages(this.demande().id));
+      .subscribe(() => {
+        if (!this.historiqueSeul()) this.chargerMessages(this.demande().id);
+      });
   }
 
   private charger(demandeId: number) {
@@ -138,7 +144,10 @@ export class DiscussionDemande {
     this.error.set('');
     // Le devis, les dates et le paiement peuvent ne pas exister encore (404) : ce n'est pas une erreur
     forkJoin({
-      messages: this.messageApi.deLaDemande(demandeId).pipe(catchError(() => of([] as Message[]))),
+      // (historique seul : pas besoin des messages, et on ne les marque pas comme lus)
+      messages: this.historiqueSeul()
+        ? of([] as Message[])
+        : this.messageApi.deLaDemande(demandeId).pipe(catchError(() => of([] as Message[]))),
       devis: this.devisApi.actuel(demandeId).pipe(catchError(() => of(null))),
       rendezVous: this.rendezVousApi
         .historique(demandeId)

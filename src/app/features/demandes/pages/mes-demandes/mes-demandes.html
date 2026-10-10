@@ -115,6 +115,13 @@
 
           <!-- La discussion est dans la page Messages -->
           <app-bouton-discussion [demande]="d" />
+          <!-- L'historique (devis, rendez-vous, travaux, paiement), replié -->
+          <details class="mt-4">
+            <summary class="text-link cursor-pointer text-sm font-semibold">
+              🕓 Historique de la demande
+            </summary>
+            <app-discussion-demande class="mt-3 block" [demande]="d" [historiqueSeul]="true" />
+          </details>
 
           <!-- Le détail, replié -->
           <details class="mt-4 border-t border-gray-100 pt-3">
