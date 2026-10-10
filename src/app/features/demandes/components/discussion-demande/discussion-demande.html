@@ -91,6 +91,7 @@
       class="block border-t border-gray-100"
       [placeholder]="'Écrire à ' + autreNom() + '…'"
       [busy]="busy()"
+      [texteInitial]="brouillon()"
       (texte)="envoyerTexte($event)"
       (vocal)="envoyerVocal($event)"
     />

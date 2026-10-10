@@ -1,6 +1,7 @@
 import {
   Component,
   DestroyRef,
+  effect,
   ElementRef,
   inject,
   input,
@@ -34,6 +35,9 @@ export class BarreSaisie {
   readonly placeholder = input('Écrire un message…');
   // Un envoi est en cours : on bloque les boutons
   readonly busy = input(false);
+  // Un message déjà écrit (ex. après « Réserver » sur un profil) : il apparaît dans le champ,
+  // le client peut le modifier puis l'envoyer
+  readonly texteInitial = input('');
 
   readonly texte = output<string>();
   readonly vocal = output<Vocal>();
@@ -61,6 +65,15 @@ export class BarreSaisie {
   private minuterie: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
+    // On met le message déjà écrit dans le champ (une seule fois par texte reçu)
+    let dejaMis = '';
+    effect(() => {
+      const texte = this.texteInitial();
+      if (texte && texte !== dejaMis) {
+        dejaMis = texte;
+        this.champ.setValue(texte);
+      }
+    });
     // Si on quitte la page pendant un enregistrement : on coupe le micro
     inject(DestroyRef).onDestroy(() => this.arreter(false));
   }

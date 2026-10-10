@@ -1,10 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DOCUMENT, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { MonCompteService } from '../../../../core/auth/mon-compte.service';
+import { MonCompte, MonCompteService } from '../../../../core/auth/mon-compte.service';
 import { apiError } from '../../../../core/http/api-error';
 import { DemandeApiService } from '../../../demandes/data-access/demande-api.service';
 import { FavoriApiService } from '../../../favoris/data-access/favori-api.service';
@@ -22,7 +23,15 @@ const MAX_FICHIERS = 5;
 const TAILLE_MAX = 20 * 1024 * 1024; // 20 Mo
 const FORMATS = ['image/jpeg', 'image/png', 'video/mp4'];
 
-// Le profil d'un professionnel (vu par un client) + le formulaire « Faire une demande »
+// Le profil d'un professionnel (vu par un client). Deux écrans, choisis par l'adresse :
+// - /professionnels/2                       -> le profil, avec ses services ;
+// - /professionnels/2?demande=1&service=7   -> seulement le formulaire « Faire une demande ».
+// Chaque service a son chemin, selon son tarif :
+// - prix fixe  -> « Réserver » : fenêtre de confirmation, puis le chat s'ouvre
+//                 avec un message déjà écrit ;
+// - sur devis  -> « Demander un devis » : fenêtre de confirmation (adresse, un mot), envoi,
+//                 et on reste sur le profil (message vert) : le pro est prévenu par notification ;
+// - à partir de -> « Faire une demande » : le formulaire complet, service déjà choisi.
 @Component({ imports: [DatePipe, ReactiveFormsModule, RouterLink], templateUrl: './profil.html' })
 export class Profil {
   private readonly professionnelApi = inject(ProfessionnelApiService);
@@ -30,9 +39,12 @@ export class Profil {
   private readonly favoriApi = inject(FavoriApiService);
   private readonly zoneApi = inject(ZoneApiService);
   private readonly monCompteService = inject(MonCompteService);
+  private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
 
   // L'id du pro vient de l'adresse : /professionnels/2
-  private readonly professionnelId = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
+  private readonly route = inject(ActivatedRoute);
+  readonly professionnelId = Number(this.route.snapshot.paramMap.get('id'));
   // L'id du client connecté vient de la session
   private readonly clientId = inject(AuthService).session()?.utilisateurId ?? 0;
 
@@ -69,6 +81,23 @@ export class Profil {
 
   readonly favori = signal(false);
   readonly favoriBusy = signal(false);
+
+  // ---------- Les deux écrans ----------
+  // false : le profil ; true : seulement le formulaire « Faire une demande »
+  readonly modeDemande = signal(false);
+  // Le compte du client (son adresse sert aux demandes rapides)
+  readonly compte = signal<MonCompte | null>(null);
+
+  // ---------- La petite fenêtre « Demander un devis » (ou « Réserver » sans adresse) ----------
+  readonly fenetre = signal<{ service: ServicePro; type: 'devis' | 'reserver' } | null>(null);
+  readonly rapide = inject(FormBuilder).nonNullable.group({
+    adresse: ['', [Validators.required, Validators.maxLength(255)]],
+    mot: ['', Validators.maxLength(500)],
+  });
+  readonly rapideBusy = signal(false);
+  readonly rapideError = signal('');
+  // Après une demande de devis : le message vert sur le profil, et l'id pour « Voir ma demande »
+  readonly devisEnvoye = signal<{ demandeId: number; texte: string } | null>(null);
 
   // ---------- Le formulaire de demande ----------
   readonly quartiers = signal<Zone[]>([]);
@@ -107,9 +136,19 @@ export class Profil {
     // Pré-remplir l'adresse et le quartier avec ceux du client (« Mon compte »)
     this.monCompteService.consulter().subscribe({
       next: (compte) => {
+        this.compte.set(compte);
         if (compte.adresse) this.form.controls.adresse.setValue(compte.adresse);
         if (compte.zoneId) this.form.controls.zoneId.setValue(String(compte.zoneId));
       },
+    });
+
+    // Quel écran ? (?demande=1 : le formulaire ; &service=7 : ce service déjà choisi)
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => {
+      this.modeDemande.set(q.has('demande'));
+      const service = q.get('service');
+      if (service) this.form.controls.serviceId.setValue(service);
+      this.demandeSuccess.set('');
+      this.demandeError.set('');
     });
 
     // Ce pro est-il déjà dans mes favoris ?
@@ -236,7 +275,92 @@ export class Profil {
     this.fichiers.set([]);
   }
 
+  // ===== Les chemins rapides : « Réserver » et « Demander un devis » =====
+
+  // Prix fixe et sur devis : d'abord une fenêtre de confirmation (« Voulez-vous vraiment… ? »)
+  reserver(s: ServicePro) {
+    this.ouvrirFenetre(s, 'reserver');
+  }
+
+  demanderDevis(s: ServicePro) {
+    this.ouvrirFenetre(s, 'devis');
+  }
+
+  private ouvrirFenetre(s: ServicePro, type: 'devis' | 'reserver') {
+    this.rapide.reset({ adresse: this.compte()?.adresse ?? '', mot: '' });
+    this.rapideError.set('');
+    this.fenetre.set({ service: s, type });
+  }
+
+  fermerFenetre() {
+    if (!this.rapideBusy()) this.fenetre.set(null);
+  }
+
+  envoyerRapide() {
+    const f = this.fenetre();
+    this.rapide.markAllAsTouched();
+    if (!f || this.rapide.invalid) return;
+    const v = this.rapide.getRawValue();
+    this.creerRapide(f.service, f.type, v.adresse.trim(), v.mot.trim());
+  }
+
+  // La demande est créée (le pro est prévenu), puis on ouvre le chat de cette demande.
+  // Pour une réservation, le message d'accompagnement est déjà écrit dans la barre du bas.
+  private creerRapide(s: ServicePro, type: 'devis' | 'reserver', adresse: string, mot: string) {
+    if (this.rapideBusy()) return;
+    const prenom = this.profil()?.prenom ?? '';
+    const description =
+      (type === 'reserver'
+        ? `Réservation : « ${s.titre} » (${this.prix(s)}).`
+        : `Demande de devis pour « ${s.titre} ».`) + (mot ? ' ' + mot : '');
+    this.rapideBusy.set(true);
+    this.rapideError.set('');
+    this.demandeApi
+      .creer(this.clientId, {
+        serviceId: s.id,
+        description,
+        adresse,
+        dateSouhaitee: this.aujourdhui,
+        urgente: false,
+        visiteDemandee: false,
+        zoneId: this.compte()?.zoneId ?? null,
+      })
+      .pipe(finalize(() => this.rapideBusy.set(false)))
+      .subscribe({
+        next: (demande) => {
+          this.fenetre.set(null);
+          // Demande de devis : on reste sur le profil (le pro est prévenu par notification)
+          if (type === 'devis') {
+            this.devisEnvoye.set({
+              demandeId: demande.id,
+              texte: `Demande envoyée à ${prenom} ${this.profil()?.nom ?? ''}. Une notification lui est arrivée : ${prenom} va préparer votre devis.`,
+            });
+            this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+          // Réservation : on ouvre le chat, avec le message déjà écrit
+          const texte =
+            type === 'reserver'
+              ? `Bonjour ${prenom}, je souhaite réserver « ${s.titre} » (${this.prix(s)}). Quand êtes-vous disponible ?`
+              : '';
+          void this.router.navigate(['/messages'], {
+            queryParams: { demande: demande.id, texte },
+          });
+        },
+        error: (error) => {
+          // Sans fenêtre ouverte (réservation directe), on l'ouvre pour montrer l'erreur
+          if (!this.fenetre()) this.ouvrirFenetre(s, type);
+          this.rapideError.set(apiError(error));
+        },
+      });
+  }
+
   // ===== Petites aides pour l'affichage =====
+
+  // 5000 -> "5 000 F"
+  prix(service: ServicePro) {
+    return service.montant != null ? service.montant.toLocaleString('fr-FR') + ' F' : '';
+  }
 
   tarif(service: ServicePro) {
     const montant = service.montant != null ? service.montant.toLocaleString('fr-FR') + ' F' : '';

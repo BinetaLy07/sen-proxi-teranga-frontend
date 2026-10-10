@@ -71,3 +71,28 @@ export const STATUTS_ANNULABLES: StatutDemande[] = [
   'DEVIS_ACCEPTE',
   'PLANIFIEE',
 ];
+
+// Le type de demande, selon le tarif du service : le badge de couleur et ce que le pro doit faire
+// (affichés au pro dans « Demandes reçues » et sur son tableau de bord)
+export function parcoursPro(d: Demande): { badge: string; classes: string; consigne: string } {
+  const prix = d.montant != null ? d.montant.toLocaleString('fr-FR') + ' F' : '';
+  if (d.typeTarif === 'FIXE') {
+    return {
+      badge: '🟢 Réservation à prix fixe',
+      classes: 'bg-green-50 text-green-800',
+      consigne: `Réservation au prix fixe (${prix}) : acceptez, puis fixez le jour avec ${d.clientNom} dans le chat.`,
+    };
+  }
+  if (d.typeTarif === 'SUR_DEVIS') {
+    return {
+      badge: '🔵 Demande de devis',
+      classes: 'bg-indigo-50 text-indigo-800',
+      consigne: `${d.clientNom} attend un devis : acceptez, puis préparez et envoyez le devis.`,
+    };
+  }
+  return {
+    badge: '🟠 Prix à discuter',
+    classes: 'bg-orange-50 text-orange-800',
+    consigne: `Prix à discuter (à partir de ${prix}) : échangez avec ${d.clientNom} par message, puis envoyez votre prix.`,
+  };
+}

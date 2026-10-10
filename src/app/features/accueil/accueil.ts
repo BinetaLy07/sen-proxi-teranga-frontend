@@ -5,6 +5,7 @@ import { ACCUEIL_ROLE } from '../../core/auth/accueil-role';
 import { AuthService } from '../../core/auth/auth.service';
 import { Categorie } from '../categories/data-access/categorie.models';
 import { CategorieApiService } from '../categories/data-access/categorie-api.service';
+import { iconeDe, infosFamilleDe } from '../categories/data-access/familles';
 import { Zone } from '../zones/data-access/zone.models';
 import { ZoneApiService } from '../zones/data-access/zone-api.service';
 
@@ -51,6 +52,17 @@ export class Accueil {
   });
 
   readonly categories = signal<Categorie[]>([]);
+  readonly iconeDe = iconeDe;
+  readonly infosFamilleDe = infosFamilleDe;
+  // « Souvent recherché » : les besoins les plus courants du quartier (s'ils existent),
+  // sinon les 4 premières catégories
+  readonly souventRecherchees = computed(() => {
+    const courantes = ['ménage & nettoyage', 'plomberie', 'électricité', 'location de matériel'];
+    const trouvees = courantes
+      .map((nom) => this.categories().find((c) => c.nom.toLowerCase() === nom))
+      .filter((c): c is Categorie => c !== undefined);
+    return trouvees.length > 0 ? trouvees : this.categories().slice(0, 4);
+  });
   readonly zones = signal<Zone[]>([]);
   readonly communes = computed(() => this.zones().filter((z) => z.type === 'COMMUNE'));
   readonly quartiers = computed(() => this.zones().filter((z) => z.type === 'QUARTIER'));

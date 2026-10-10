@@ -49,6 +49,34 @@
           <p class="field-error">500 caractères maximum.</p>
         }
       </div>
+      <div class="grid grid-cols-[6rem_1fr] gap-3">
+        <div>
+          <label for="categorie-icone">Icône</label>
+          <input
+            id="categorie-icone"
+            formControlName="icone"
+            placeholder="🔧"
+            class="text-center text-xl"
+            [attr.aria-invalid]="invalid('icone')"
+          />
+        </div>
+        <div>
+          <label for="categorie-famille">Famille</label>
+          <select
+            id="categorie-famille"
+            formControlName="famille"
+            class="h-12 w-full rounded-lg border border-gray-300 bg-white px-3 text-base"
+          >
+            <option value="">Autres services</option>
+            @for (f of familles; track f.cle) {
+              <option [value]="f.cle">{{ f.libelle }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <p class="-mt-2 text-xs text-gray-500">
+        Icône : un seul emoji (sur Windows, touche ⊞ + point pour les choisir).
+      </p>
       <div class="flex flex-wrap gap-3">
         <button type="submit" class="primary-button" [disabled]="busy()">
           {{ enModification() !== null ? 'Enregistrer' : '+ Ajouter' }}
@@ -76,9 +104,10 @@
           [class.opacity-60]="!c.active"
         >
           <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 font-bold text-brand-500"
+            class="flex size-10 shrink-0 items-center justify-center rounded-lg text-lg font-bold text-brand-500"
+            [class]="infosFamilleDe(c).fond"
             aria-hidden="true"
-            >{{ c.nom.charAt(0) }}</span
+            >{{ iconeDe(c) }}</span
           >
           <div class="min-w-0 flex-1">
             <p class="font-semibold text-gray-900">
@@ -92,6 +121,9 @@
             @if (c.description) {
               <p class="text-sm text-gray-600">{{ c.description }}</p>
             }
+            <p class="mt-0.5 text-xs font-semibold" [class]="infosFamilleDe(c).titre">
+              {{ infosFamilleDe(c).libelle }}
+            </p>
           </div>
           <div class="flex gap-2">
             <button

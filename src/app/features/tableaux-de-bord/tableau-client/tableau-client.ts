@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiError } from '../../../core/http/api-error';
-import { Demande, StatutDemande } from '../../demandes/data-access/demande.models';
+import { Demande } from '../../demandes/data-access/demande.models';
 import { DemandeApiService } from '../../demandes/data-access/demande-api.service';
 import { ETIQUETTES } from '../../demandes/data-access/demande-statuts';
 import { Devis } from '../../devis/data-access/devis.models';
@@ -15,33 +15,15 @@ import {
   demandesEnCours,
   devisAValider,
   FILTRES,
+  regrouperDemandes,
   rendezVousAVenir,
-  STATUTS_EN_COURS,
 } from '../../demandes/data-access/filtres-demandes';
+import { STYLES_TABLEAU } from '../styles-tableau';
 import {
   ContactPro,
   ProfilProfessionnel,
 } from '../../professionnels/data-access/professionnel.models';
 import { ProfessionnelApiService } from '../../professionnels/data-access/professionnel-api.service';
-
-// Les 4 états affichés dans « Mes demandes » (regroupement par pro)
-type Etat = 'attente' | 'enCours' | 'cloturees' | 'arretees';
-
-interface GroupePro {
-  professionnelId: number;
-  nom: string;
-  demandes: Demande[]; // la plus récente d'abord
-  etats: Record<Etat, number>;
-}
-
-// En attente : le pro n'a pas encore répondu. En cours : le travail avance.
-// Clôturée : terminée et payée. Arrêtée : refusée, annulée, expirée ou en litige.
-function etatDe(statut: StatutDemande): Etat {
-  if (statut === 'CREEE') return 'attente';
-  if (statut === 'CONFIRMEE' || statut === 'CLOTUREE') return 'cloturees';
-  if (STATUTS_EN_COURS.includes(statut)) return 'enCours';
-  return 'arretees';
-}
 
 // « Tableau de bord » du client : l'essentiel en un coup d'œil.
 // Les chiffres sont calculés à partir de ses demandes (une seule liste chargée au départ).
@@ -50,67 +32,7 @@ function etatDe(statut: StatutDemande): Etat {
 @Component({
   imports: [DatePipe, RouterLink],
   templateUrl: './tableau-client.html',
-  styles: `
-    /* Une carte de couleur : se soulève un peu au survol */
-    .carte {
-      display: block;
-      border-radius: 1.25rem;
-      padding: 1.25rem;
-      box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
-      transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
-    }
-    .carte:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 24px -10px rgb(0 0 0 / 0.25);
-    }
-    .carte:hover .voir {
-      text-decoration: underline;
-    }
-    .pastille-icone {
-      display: flex;
-      width: 2.25rem;
-      height: 2.25rem;
-      align-items: center;
-      justify-content: center;
-      border-radius: 9999px;
-      background: rgb(255 255 255 / 0.75);
-    }
-    .voir {
-      display: block;
-      margin-top: 1rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-    .bloc {
-      border-radius: 1.25rem;
-      border: 1px solid #e5e7eb;
-      background: white;
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
-    }
-    .etat {
-      border-radius: 9999px;
-      padding: 0.125rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .vide {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 0 1rem;
-      text-align: center;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .carte,
-      .carte:hover {
-        transition: none;
-        transform: none;
-      }
-    }
-  `,
+  styles: [STYLES_TABLEAU],
 })
 export class TableauClient {
   private readonly demandeApi = inject(DemandeApiService);
@@ -134,27 +56,7 @@ export class TableauClient {
   // ---------- « Mes demandes » regroupées par professionnel ----------
   // Une ligne par pro (le plus récent en haut), avec le nombre de demandes par état.
   // Un clic sur la ligne déplie ses demandes.
-  readonly groupes = computed<GroupePro[]>(() => {
-    const parPro = new Map<number, GroupePro>();
-    const parDate = [...this.demandes()].sort((a, b) =>
-      b.dateCreation.localeCompare(a.dateCreation),
-    );
-    for (const d of parDate) {
-      let g = parPro.get(d.professionnelId);
-      if (!g) {
-        g = {
-          professionnelId: d.professionnelId,
-          nom: d.professionnelNom,
-          demandes: [],
-          etats: { attente: 0, enCours: 0, cloturees: 0, arretees: 0 },
-        };
-        parPro.set(d.professionnelId, g);
-      }
-      g.demandes.push(d);
-      g.etats[etatDe(d.statut)]++;
-    }
-    return [...parPro.values()];
-  });
+  readonly groupes = computed(() => regrouperDemandes(this.demandes(), 'professionnel'));
   // Le pro dont les demandes sont dépliées (un seul à la fois)
   readonly proDeplie = signal<number | null>(null);
 

@@ -182,14 +182,14 @@
     } @else {
       <!-- Une ligne par professionnel ; un clic déplie ses demandes -->
       <ul class="mt-3 flex flex-col gap-2">
-        @for (g of groupes(); track g.professionnelId) {
+        @for (g of groupes(); track g.personneId) {
           <li class="overflow-hidden rounded-xl border border-gray-200">
             <button
               type="button"
               class="flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-gray-50"
-              [class.bg-gray-50]="proDeplie() === g.professionnelId"
-              [attr.aria-expanded]="proDeplie() === g.professionnelId"
-              (click)="deplier(g.professionnelId)"
+              [class.bg-gray-50]="proDeplie() === g.personneId"
+              [attr.aria-expanded]="proDeplie() === g.personneId"
+              (click)="deplier(g.personneId)"
             >
               <span
                 class="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-sm font-bold text-brand-500"
@@ -226,7 +226,7 @@
               <svg
                 viewBox="0 0 24 24"
                 class="size-5 shrink-0 text-gray-400 transition-transform"
-                [class.rotate-180]="proDeplie() === g.professionnelId"
+                [class.rotate-180]="proDeplie() === g.personneId"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
@@ -239,7 +239,7 @@
             </button>
 
             <!-- Le détail : ses demandes, chacune avec son statut -->
-            @if (proDeplie() === g.professionnelId) {
+            @if (proDeplie() === g.personneId) {
               <ul class="divide-y divide-gray-100 border-t border-gray-100 bg-white">
                 @for (d of g.demandes; track d.id) {
                   <li>

@@ -119,12 +119,12 @@
           @if (categories().length > 0) {
             <div class="mt-5 flex flex-wrap items-center gap-2 text-sm text-white/75">
               <span class="mr-1">Souvent recherché :</span>
-              @for (c of categories().slice(0, 4); track c.id) {
+              @for (c of souventRecherchees(); track c.id) {
                 <a
                   routerLink="/recherche"
                   [queryParams]="{ categorieId: c.id }"
                   class="rounded-full bg-white/10 px-3.5 py-2 text-white hover:bg-white/20"
-                  >{{ c.nom }}</a
+                  ><span aria-hidden="true">{{ iconeDe(c) }}</span> {{ c.nom }}</a
                 >
               }
             </div>
@@ -238,9 +238,10 @@
                 class="flex items-center gap-3.5 rounded-xl border border-gray-200 bg-white p-4 hover:border-brand-500"
               >
                 <span
-                  class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xl font-bold text-brand-500"
+                  class="flex size-12 shrink-0 items-center justify-center rounded-xl text-2xl font-bold text-brand-500"
+                  [class]="infosFamilleDe(c).fond"
                   aria-hidden="true"
-                  >{{ c.nom.charAt(0) }}</span
+                  >{{ iconeDe(c) }}</span
                 >
                 <span class="min-w-0">
                   <strong class="block text-gray-900">{{ c.nom }}</strong>

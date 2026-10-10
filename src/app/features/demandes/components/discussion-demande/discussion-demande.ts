@@ -75,6 +75,8 @@ export class DiscussionDemande {
   readonly lectureSeule = input(false);
   // Dans la page Messages : on affiche la demande concernée et un lien « Voir la demande »
   readonly dansMessages = input(false);
+  // Un message déjà écrit à mettre dans la barre du bas (ex. après « Réserver »)
+  readonly brouillon = input('');
   // Prévient la page Messages qu'un message est parti (pour mettre la liste à jour)
   readonly envoye = output<void>();
 

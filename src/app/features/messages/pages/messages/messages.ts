@@ -23,7 +23,8 @@ interface Ouverte {
 }
 
 // « Messages » : comme sur un téléphone, on voit UNE chose à la fois.
-// - /messages                       -> la discussion la plus récente, seule ;
+// - /messages                       -> la discussion la plus récente, seule
+//                                      (sans aucun message : le dernier chat ouvert) ;
 // - /messages?liste=1               -> la liste de mes discussions (« ← Mes discussions ») ;
 // - /messages?demande=20            -> la discussion d'une demande (bouton « Discuter avec… ») ;
 // - /messages?avec=2&nom=Moussa…    -> une question générale (« Écrire à … » sur un profil).
@@ -66,6 +67,8 @@ export class Messages {
   readonly error = signal('');
   // La barre du bas (champ + micro), pour la vider quand un texte est parti
   private readonly barre = viewChild(BarreSaisie);
+  // ?texte=… : un message déjà écrit à mettre dans la barre du bas (ex. après « Réserver »)
+  readonly brouillon = signal('');
 
   constructor() {
     // À chaque changement d'adresse (clic sur un lien, bouton « retour »…), on affiche
@@ -75,6 +78,7 @@ export class Messages {
       .subscribe((params) => {
         const avec = Number(params.get('avec')) || null;
         const demande = Number(params.get('demande')) || null;
+        this.brouillon.set(params.get('texte') ?? '');
         this.modeListe.set(params.get('liste') !== null);
 
         if (this.modeListe()) {
@@ -141,15 +145,80 @@ export class Messages {
       .subscribe({
         next: (liste) => {
           this.conversations.set(liste);
-          if (ouvrirLaPremiere && liste.length > 0 && this.ouverte() === null) {
-            this.ouvrir(liste[0]);
+          if (ouvrirLaPremiere && this.ouverte() === null) {
+            if (liste.length > 0) {
+              this.ouvrir(liste[0]);
+            } else {
+              // Aucun message encore : on rouvre le dernier chat ouvert (même vide),
+              // sinon celui de la demande la plus récente
+              this.ouvrirSansMessage();
+            }
           }
         },
         error: (error) => this.error.set(apiError(error)),
       });
   }
 
+  // Menu « Messages » sans aucun message : on ne montre pas une page vide si on peut
+  // ouvrir un chat utile (le dernier ouvert, ou celui de la dernière demande)
+  // Pendant qu'on cherche la dernière demande : pas de page « vide » qui clignote
+  readonly rechercheChat = signal(false);
+
+  private ouvrirSansMessage() {
+    const derniere = this.lireDerniere();
+    if (derniere) {
+      this.ouvrir(derniere);
+      return;
+    }
+    const id = this.session?.utilisateurId ?? 0;
+    const demandes = this.estPro
+      ? this.demandeApi.listerPourPro(id)
+      : this.demandeApi.listerPourClient(id);
+    this.rechercheChat.set(true);
+    demandes.pipe(finalize(() => this.rechercheChat.set(false))).subscribe({
+      next: (liste) => {
+        const recente = [...liste].sort((a, b) => b.dateCreation.localeCompare(a.dateCreation))[0];
+        if (recente && this.ouverte() === null) {
+          this.ouvrir({
+            interlocuteurId: this.estPro ? recente.clientId : recente.professionnelId,
+            interlocuteurNom: this.estPro ? recente.clientNom : recente.professionnelNom,
+            demandeId: recente.id,
+            demandeTitre: recente.serviceTitre,
+          });
+        }
+      },
+    });
+  }
+
+  // Le dernier chat ouvert est gardé dans le navigateur (un par utilisateur)
+  private cleDerniere() {
+    return 'teranga.derniere-discussion.' + (this.session?.utilisateurId ?? 0);
+  }
+
+  private garderDerniere(c: Ouverte) {
+    try {
+      localStorage.setItem(this.cleDerniere(), JSON.stringify(c));
+    } catch {
+      /* navigateur sans stockage : pas grave */
+    }
+  }
+
+  private lireDerniere(): Ouverte | null {
+    try {
+      const texte = localStorage.getItem(this.cleDerniere());
+      return texte ? (JSON.parse(texte) as Ouverte) : null;
+    } catch {
+      return null;
+    }
+  }
+
   ouvrir(c: Ouverte) {
+    this.garderDerniere({
+      interlocuteurId: c.interlocuteurId,
+      interlocuteurNom: c.interlocuteurNom,
+      demandeId: c.demandeId,
+      demandeTitre: c.demandeTitre,
+    });
     this.ouverte.set({
       interlocuteurId: c.interlocuteurId,
       interlocuteurNom: c.interlocuteurNom,

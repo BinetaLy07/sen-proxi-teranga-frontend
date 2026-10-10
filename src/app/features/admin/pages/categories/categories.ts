@@ -2,7 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, Observable } from 'rxjs';
 import { apiError } from '../../../../core/http/api-error';
-import { Categorie } from '../../../categories/data-access/categorie.models';
+import { Categorie, FamilleCategorie } from '../../../categories/data-access/categorie.models';
+import { FAMILLES, iconeDe, infosFamilleDe } from '../../../categories/data-access/familles';
 import { CategorieApiService } from '../../../categories/data-access/categorie-api.service';
 
 // « Catégories de métiers » : l'administrateur gère la liste des catégories
@@ -17,6 +18,13 @@ export class Categories {
   readonly error = signal('');
   readonly message = signal('');
   readonly busy = signal(false);
+  readonly iconeDe = iconeDe;
+  readonly infosFamilleDe = infosFamilleDe;
+  // Le menu déroulant « Famille »
+  readonly familles = Object.entries(FAMILLES).map(([cle, f]) => ({
+    cle: cle as FamilleCategorie,
+    libelle: `${f.icone} ${f.libelle}`,
+  }));
 
   // Les actives d'abord, puis par ordre alphabétique
   readonly triees = computed(() =>
@@ -31,6 +39,8 @@ export class Categories {
   readonly form = inject(FormBuilder).nonNullable.group({
     nom: ['', [Validators.required, Validators.maxLength(100)]],
     description: ['', Validators.maxLength(500)],
+    icone: ['', Validators.maxLength(16)],
+    famille: ['' as FamilleCategorie | ''],
   });
 
   constructor() {
@@ -45,7 +55,12 @@ export class Categories {
 
   modifier(c: Categorie) {
     this.enModification.set(c.id);
-    this.form.setValue({ nom: c.nom, description: c.description ?? '' });
+    this.form.setValue({
+      nom: c.nom,
+      description: c.description ?? '',
+      icone: c.icone ?? '',
+      famille: c.famille ?? '',
+    });
     this.message.set('');
     this.error.set('');
   }
@@ -59,7 +74,12 @@ export class Categories {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.busy()) return;
     const v = this.form.getRawValue();
-    const saisie = { nom: v.nom.trim(), description: v.description.trim() || null };
+    const saisie = {
+      nom: v.nom.trim(),
+      description: v.description.trim() || null,
+      icone: v.icone.trim() || null,
+      famille: v.famille || null,
+    };
     const id = this.enModification();
     this.executer(
       id === null ? this.api.creer(saisie) : this.api.modifier(id, saisie),
@@ -94,7 +114,7 @@ export class Categories {
     });
   }
 
-  invalid(nom: 'nom' | 'description') {
+  invalid(nom: 'nom' | 'description' | 'icone') {
     const c = this.form.controls[nom];
     return c.touched && c.invalid;
   }
