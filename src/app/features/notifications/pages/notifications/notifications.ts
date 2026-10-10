@@ -7,6 +7,7 @@ import { apiError } from '../../../../core/http/api-error';
 import { CompteursService } from '../../data-access/compteurs.service';
 import { LIBELLES_TYPES, NotificationRecue } from '../../data-access/notification.models';
 import { NotificationApiService } from '../../data-access/notification-api.service';
+import { destinationNotification } from '../../data-access/destination-notification';
 
 // « Notifications » : la liste, la plus récente en haut. Un clic marque la notification
 // comme lue et ouvre le bon écran (la demande, les messages ou le profil).
@@ -40,7 +41,7 @@ export class Notifications {
     if (!n.lue) {
       this.api.marquerLue(n.id).subscribe({ next: () => this.compteurs.rafraichir() });
     }
-    void this.router.navigate(...this.destination(n));
+    void this.router.navigate(...destinationNotification(n, this.role));
   }
 
   toutLu() {
@@ -51,20 +52,6 @@ export class Notifications {
       },
       error: (error) => this.error.set(apiError(error)),
     });
-  }
-
-  // Où aller quand on clique ? (dépend du type et du rôle)
-  private destination(n: NotificationRecue): [string[], { queryParams?: Record<string, number> }] {
-    // Un message : la page Messages, ouverte sur la bonne conversation
-    // (celle de la demande, ou les questions générales)
-    if (n.type === 'NOUVEAU_MESSAGE') {
-      return n.demandeId
-        ? [['/messages'], { queryParams: { demande: n.demandeId } }]
-        : [['/messages'], {}];
-    }
-    if (n.type === 'PROFIL_VERIFIE') return [['/mon-profil'], {}];
-    const page = this.role === 'PROFESSIONNEL' ? '/demandes-recues' : '/mes-demandes';
-    return n.demandeId ? [[page], { queryParams: { demande: n.demandeId } }] : [[page], {}];
   }
 
   aDesNonLues() {

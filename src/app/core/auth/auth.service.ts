@@ -13,9 +13,10 @@ export class AuthService {
   private readonly state = signal<Tokens | null>(this.restore());
   readonly session = this.state.asReadonly();
   private refreshRequest?: Observable<Tokens>;
-  login(email: string, motDePasse: string) {
+  // identifiant : le numéro de téléphone OU l'email
+  login(identifiant: string, motDePasse: string) {
     return this.http
-      .post<Tokens>(`${environment.apiUrl}/auth/connexion`, { email, motDePasse })
+      .post<Tokens>(`${environment.apiUrl}/auth/connexion`, { identifiant, motDePasse })
       .pipe(tap((tokens) => this.store(tokens)));
   }
   register(request: RegisterRequest) {

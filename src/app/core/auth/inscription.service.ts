@@ -8,7 +8,7 @@ export interface InscriptionClient {
   prenom: string;
   nom: string;
   telephone: string;
-  email: string;
+  email: string | null; // facultatif
   motDePasse: string;
   cguAcceptees: boolean;
   adresse: string; // obligatoire
@@ -20,7 +20,7 @@ export interface InscriptionProfessionnel {
   prenom: string;
   nom: string;
   telephone: string;
-  email: string;
+  email: string | null; // facultatif
   motDePasse: string;
   cguAcceptees: boolean;
   metier: string; // obligatoire

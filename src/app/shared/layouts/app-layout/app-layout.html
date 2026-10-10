@@ -1,18 +1,4 @@
 <div class="min-h-screen bg-gray-50">
-  <!-- ===== Sur téléphone : une barre en haut avec le bouton « Menu » ===== -->
-  <header class="flex items-center justify-between bg-brand-950 px-5 py-3 text-white lg:hidden">
-    <a [routerLink]="accueil()" class="font-bold">Sen Proxi Teranga</a>
-    <button
-      type="button"
-      class="rounded-lg border border-white/25 px-3 py-2 text-sm font-medium"
-      [attr.aria-expanded]="menuOuvert()"
-      aria-controls="menu-principal"
-      (click)="menuOuvert.set(!menuOuvert())"
-    >
-      {{ menuOuvert() ? '✕ Fermer' : '☰ Menu' }}
-    </button>
-  </header>
-
   <!-- Fond sombre derrière le menu ouvert (téléphone) : un clic le referme -->
   @if (menuOuvert()) {
     <div
@@ -68,10 +54,47 @@
     </button>
   </aside>
 
+  <!-- ===== La barre du haut : bonjour, cloche, initiale ===== -->
+  <header
+    class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-gray-200 bg-white/90 px-4 backdrop-blur sm:px-8 lg:ml-64 lg:px-10"
+  >
+    <!-- Sur téléphone : le bouton du menu et le nom -->
+    <button
+      type="button"
+      class="flex size-10 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-700 lg:hidden"
+      [attr.aria-expanded]="menuOuvert()"
+      aria-controls="menu-principal"
+      (click)="menuOuvert.set(!menuOuvert())"
+    >
+      <span aria-hidden="true">☰</span><span class="sr-only">Ouvrir le menu</span>
+    </button>
+    <a [routerLink]="accueil()" class="font-bold text-brand-950 lg:hidden">Sen Proxi Teranga</a>
+
+    <div class="ml-auto flex items-center gap-3">
+      <p class="hidden text-[15px] text-gray-600 sm:block">
+        {{ salutation }} <strong class="font-semibold text-gray-900">{{ prenom() }}</strong>
+      </p>
+      <!-- La cloche (pas pour l'administrateur : il n'a pas de notifications) -->
+      @if (avecCloche()) {
+        <app-cloche-notifications />
+      }
+      <!-- Le rond avec l'initiale : ouvre « Mon compte » -->
+      <a
+        routerLink="/espace"
+        class="flex size-11 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-violet-600 text-lg font-bold text-white shadow-sm ring-2 ring-white transition hover:scale-105"
+        title="Mon compte"
+        ><span aria-hidden="true">{{ initiale() }}</span
+        ><span class="sr-only">Mon compte</span></a
+      >
+    </div>
+  </header>
+
   <!-- ===== Le contenu de la page ===== -->
   <main class="px-5 py-8 sm:px-8 lg:ml-64 lg:px-10 lg:py-10">
     <div class="mx-auto max-w-6xl">
       <router-outlet />
+      <!-- La fenêtre de fête, une seule fois après l'inscription -->
+      <app-fenetre-bienvenue />
     </div>
   </main>
 </div>

@@ -8,6 +8,7 @@ import { SessionInfo } from '../../core/auth/auth.models';
 import { MonCompte, MonCompteService } from '../../core/auth/mon-compte.service';
 import { MotDePasseService } from '../../core/auth/mot-de-passe.service';
 import { apiError } from '../../core/http/api-error';
+import { salutation } from '../../shared/utils/salutation';
 
 // « Mon compte » : 3 blocs
 // 1. Mes informations (lire et modifier)  -> GET / PUT /api/auth/moi
@@ -15,6 +16,8 @@ import { apiError } from '../../core/http/api-error';
 // 3. Mes sessions (travail de l'encadreur) -> /api/auth/sessions
 @Component({ imports: [DatePipe, ReactiveFormsModule], templateUrl: './account.html' })
 export class Account {
+  // « Bonjour » le jour, « Bonsoir » à partir de 18 h
+  readonly salutation = salutation();
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly monCompteService = inject(MonCompteService);

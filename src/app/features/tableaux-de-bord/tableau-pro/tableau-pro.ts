@@ -14,6 +14,7 @@ import { ProfessionnelApiService } from '../../professionnels/data-access/profes
 import { RendezVous } from '../../rendez-vous/data-access/rendez-vous.models';
 import { RendezVousApiService } from '../../rendez-vous/data-access/rendez-vous-api.service';
 import { aVenir, heure, jourMois } from '../dates';
+import { salutation } from '../../../shared/utils/salutation';
 
 // Les demandes qui peuvent avoir un rendez-vous proposé ou accepté
 const AVEC_RENDEZ_VOUS: StatutDemande[] = ['DEVIS_ACCEPTE', 'PLANIFIEE'];
@@ -26,6 +27,8 @@ const TERMINES: StatutDemande[] = ['TERMINEE', 'CONFIRMEE', 'CLOTUREE'];
   templateUrl: './tableau-pro.html',
 })
 export class TableauPro {
+  // « Bonjour » le jour, « Bonsoir » à partir de 18 h
+  readonly salutation = salutation();
   private readonly demandeApi = inject(DemandeApiService);
   private readonly rendezVousApi = inject(RendezVousApiService);
   private readonly proId = inject(AuthService).session()?.utilisateurId ?? 0;

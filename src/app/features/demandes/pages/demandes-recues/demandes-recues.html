@@ -1,5 +1,5 @@
 <p class="eyebrow">ESPACE PROFESSIONNEL</p>
-<h1 class="page-title">Bonjour {{ prenom() }}</h1>
+<h1 class="page-title">{{ salutation }} {{ prenom() }}</h1>
 <p class="page-description">
   @if (compteurs().nouvelles > 0) {
     {{ compteurs().nouvelles }} nouvelle{{ compteurs().nouvelles > 1 ? 's' : '' }} demande{{

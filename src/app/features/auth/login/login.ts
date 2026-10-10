@@ -5,10 +5,12 @@ import { finalize } from 'rxjs';
 import { ACCUEIL_ROLE } from '../../../core/auth/accueil-role';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiError } from '../../../core/http/api-error';
+import { BienvenueService } from '../../../shared/components/fenetre-bienvenue/bienvenue.service';
 @Component({ imports: [ReactiveFormsModule, RouterLink], templateUrl: './login.html' })
 export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly bienvenue = inject(BienvenueService);
   private readonly params = inject(ActivatedRoute).snapshot.queryParamMap;
   readonly registered = this.params.get('inscription') === 'ok';
   // Retour de « Mot de passe oublié » : le mot de passe vient d'être changé
@@ -16,13 +18,14 @@ export class Login {
   // Page demandée avant la connexion (posée par authGuard), ex : "/recherche?metier=plombier"
   private readonly retour = this.params.get('retour');
   readonly form = inject(FormBuilder).nonNullable.group({
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    // Le numéro de téléphone OU l'email
+    identifiant: ['', [Validators.required, Validators.maxLength(150)]],
     motDePasse: ['', Validators.required],
   });
   readonly busy = signal(false);
   readonly error = signal('');
   readonly visible = signal(false);
-  invalid(name: 'email' | 'motDePasse') {
+  invalid(name: 'identifiant' | 'motDePasse') {
     const c = this.form.controls[name];
     return c.touched && c.invalid;
   }
@@ -32,12 +35,16 @@ export class Login {
     if (this.form.invalid) return;
     this.busy.set(true);
     this.error.set('');
-    const { email, motDePasse } = this.form.getRawValue();
+    const { identifiant, motDePasse } = this.form.getRawValue();
     this.auth
-      .login(email.trim(), motDePasse)
+      .login(identifiant.trim(), motDePasse)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (tokens) => {
+          // 1re connexion juste après l'inscription : la fenêtre de fête (une seule fois)
+          if (tokens.premiereConnexion) {
+            this.bienvenue.afficher(tokens.prenom ?? '', tokens.nom ?? '', tokens.role);
+          }
           // Sécurité : on n'accepte qu'une adresse interne ("/…", jamais "//autre-site")
           const interne = this.retour?.startsWith('/') && !this.retour.startsWith('//');
           // Sinon, chacun arrive sur son tableau de bord (client, pro ou admin)

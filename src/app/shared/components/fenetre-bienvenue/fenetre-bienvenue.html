@@ -1,0 +1,56 @@
+@if (bienvenue(); as b) {
+  <div
+    class="voile fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titre-bienvenue"
+  >
+    <!-- Les confettis -->
+    @for (c of confettis; track $index) {
+      <i
+        class="confetti"
+        [style.left.%]="c.gauche"
+        [style.background]="c.couleur"
+        [style.animation-duration.s]="c.duree"
+        [style.animation-delay.s]="c.delai"
+        [class.rond]="c.rond"
+        aria-hidden="true"
+      ></i>
+    }
+
+    <div
+      class="carte relative w-full max-w-md rounded-3xl bg-white px-8 pt-7 pb-7 text-center shadow-2xl"
+    >
+      <!-- La coche verte qui se dessine -->
+      <div
+        class="rond-succes mx-auto flex size-20 items-center justify-center rounded-full bg-green-100"
+      >
+        <svg viewBox="0 0 52 52" class="size-12" aria-hidden="true">
+          <circle class="cercle" cx="26" cy="26" r="24" />
+          <path class="coche" d="M15 27l7 7 15-16" />
+        </svg>
+      </div>
+
+      <p class="apparait a1 mt-4 text-sm text-gray-500">
+        Bienvenue {{ b.prenom }} {{ b.nom }}, votre compte est créé
+      </p>
+      <h2
+        id="titre-bienvenue"
+        class="apparait a2 mt-1 text-3xl leading-tight font-extrabold text-gray-900"
+      >
+        Dalal ak diam sur<br />Sen Proxi Teranga ! 🎉
+      </h2>
+      <p class="apparait a3 mt-3 leading-relaxed text-gray-600">
+        {{ phrase() }}
+      </p>
+      <!-- La fenêtre reste ouverte tant qu'on n'a pas cliqué sur « Continuer » -->
+      <button
+        type="button"
+        class="apparait a4 primary-button mt-6 w-full justify-center"
+        (click)="fermer()"
+      >
+        Continuer
+      </button>
+    </div>
+  </div>
+}

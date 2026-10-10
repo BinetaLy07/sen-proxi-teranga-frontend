@@ -16,6 +16,15 @@ import { PaiementClient } from '../../components/paiement-client/paiement-client
 import { PhotosDemande } from '../../components/photos-demande/photos-demande';
 import { SuiviRendezVous } from '../../components/suivi-rendez-vous/suivi-rendez-vous';
 import { BoutonDiscussion } from '../../components/bouton-discussion/bouton-discussion';
+import { RendezVousApiService } from '../../../rendez-vous/data-access/rendez-vous-api.service';
+import {
+  demandesEnCours,
+  devisAValider,
+  FILTRES,
+  FiltreDemandes,
+  lireFiltre,
+  rendezVousAVenir,
+} from '../../data-access/filtres-demandes';
 
 // L'action qui demande un motif (une seule à la fois)
 type ActionAvecMotif = 'revision' | 'refus' | 'annulation';
@@ -41,9 +50,32 @@ export class MesDemandes {
   private readonly clientId = inject(AuthService).session()?.utilisateurId ?? 0;
 
   readonly etiquettes = ETIQUETTES;
+  readonly filtres = FILTRES;
+  private readonly rendezVousApi = inject(RendezVousApiService);
 
   // ---------- La liste ----------
   readonly demandes = signal<Demande[]>([]);
+
+  // ---------- Le filtre (une carte de couleur du tableau de bord) ----------
+  // null = toutes les demandes ; sinon seulement celles de la carte cliquée
+  readonly filtre = signal<FiltreDemandes | null>(null);
+  // Les demandes qui ont un rendez-vous à venir, dans l'ordre des dates
+  private readonly idsAvecRendezVous = signal<number[]>([]);
+  readonly demandesAffichees = computed(() => {
+    const liste = this.demandes();
+    switch (this.filtre()) {
+      case 'en-cours':
+        return demandesEnCours(liste);
+      case 'devis':
+        return devisAValider(liste);
+      case 'rdv':
+        return this.idsAvecRendezVous()
+          .map((id) => liste.find((d) => d.id === id))
+          .filter((d): d is Demande => d !== undefined);
+      default:
+        return liste;
+    }
+  });
   readonly loading = signal(true);
   readonly error = signal('');
 
@@ -85,8 +117,10 @@ export class MesDemandes {
     // - /mes-demandes               -> la liste de toutes les demandes ;
     // - /mes-demandes?demande=18    -> seulement le détail de la demande 18 (avec « ← Retour »).
     // Le bouton « retour » du navigateur ramène donc aussi à la liste.
+    // - /mes-demandes?filtre=devis  -> seulement les demandes d'une carte du tableau de bord.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const id = Number(params.get('demande')) || null;
+      this.filtre.set(lireFiltre(params.get('filtre')));
       if (!this.dejaCharge) {
         this.dejaCharge = true;
         this.charger(id);
@@ -99,9 +133,20 @@ export class MesDemandes {
     });
   }
 
-  // Clic sur une demande de la liste : on change l'adresse (?demande=18)
+  // Clic sur une demande de la liste : on change l'adresse (?demande=18).
+  // On garde le filtre pour que « ← Retour » ramène à la même liste filtrée.
   ouvrirDemande(id: number) {
-    void this.router.navigate([], { relativeTo: this.route, queryParams: { demande: id } });
+    const filtre = this.filtre();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: filtre ? { filtre, demande: id } : { demande: id },
+    });
+  }
+
+  // Le lien « ← Retour » du détail : la liste filtrée si on venait d'une carte
+  retour() {
+    const filtre = this.filtre();
+    return filtre ? { filtre } : {};
   }
 
   // ===== Chargement =====
@@ -115,6 +160,9 @@ export class MesDemandes {
       .subscribe({
         next: (liste) => {
           this.demandes.set(liste);
+          rendezVousAVenir(this.rendezVousApi, liste).subscribe((rdv) =>
+            this.idsAvecRendezVous.set(rdv.map((r) => r.demandeId)),
+          );
           // On n'ouvre une demande que si on la demande (notification, action en cours) :
           // sinon on montre seulement la liste, et on clique sur celle qu'on veut voir
           if (keepId !== null) this.choisir(keepId, true);

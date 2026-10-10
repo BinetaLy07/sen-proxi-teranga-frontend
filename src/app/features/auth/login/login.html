@@ -22,18 +22,20 @@
   novalidate
 >
   <div>
-    <label for="email">Adresse email <span class="required">*</span></label
+    <label for="identifiant">Téléphone ou email <span class="required">*</span></label
     ><input
-      id="email"
-      type="email"
-      formControlName="email"
+      id="identifiant"
+      type="text"
+      formControlName="identifiant"
       autocomplete="username"
-      placeholder="vous@exemple.com"
-      [attr.aria-invalid]="invalid('email')"
-      aria-describedby="email-error"
+      placeholder="77 123 45 67 ou vous@exemple.com"
+      [attr.aria-invalid]="invalid('identifiant')"
+      aria-describedby="identifiant-error"
     />
-    @if (invalid('email')) {
-      <p id="email-error" class="field-error">Saisissez une adresse email valide.</p>
+    @if (invalid('identifiant')) {
+      <p id="identifiant-error" class="field-error">
+        Saisissez votre numéro de téléphone ou votre email.
+      </p>
     }
   </div>
   <div>

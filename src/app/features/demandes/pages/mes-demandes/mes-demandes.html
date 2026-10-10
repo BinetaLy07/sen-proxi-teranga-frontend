@@ -24,13 +24,37 @@
     <!-- ===== La liste (cachée quand une demande est ouverte) ===== -->
     @if (!selection()) {
       <nav class="flex w-full max-w-3xl flex-col gap-3" aria-label="Mes demandes">
-        @for (d of demandes(); track d.id) {
+        <!-- Venue d'une carte du tableau de bord : le nom du filtre, en couleur -->
+        @if (filtre(); as f) {
+          <a routerLink="/mes-demandes" class="text-link self-start text-sm font-semibold"
+            >← Toutes mes demandes</a
+          >
+          <p
+            class="self-start rounded-full border px-3 py-1 text-sm font-semibold"
+            [class]="filtres[f].chip"
+          >
+            <span aria-hidden="true">{{ filtres[f].icone }}</span> {{ filtres[f].libelle }} ·
+            {{ demandesAffichees().length }}
+          </p>
+          @if (demandesAffichees().length === 0) {
+            <p
+              class="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-gray-600"
+            >
+              {{ filtres[f].vide }}
+            </p>
+          }
+        }
+        @for (d of demandesAffichees(); track d.id) {
           <button
             type="button"
             (click)="ouvrirDemande(d.id)"
             [attr.aria-current]="d.id === selectionId() ? 'true' : null"
             class="rounded-xl border bg-white p-4 text-left"
-            [class]="d.id === selectionId() ? 'border-2 border-brand-500' : 'border-gray-200'"
+            [class]="
+              filtre()
+                ? 'border-gray-200 border-l-4 ' + filtres[filtre()!].bordure
+                : 'border-gray-200'
+            "
           >
             <span class="flex items-start justify-between gap-2">
               <strong class="text-gray-900">{{ d.serviceTitre }}</strong>
@@ -55,8 +79,11 @@
     <!-- ===== Le détail seul, avec « ← Retour » ===== -->
     @if (selection(); as d) {
       <div class="flex min-w-0 flex-1 flex-col gap-6">
-        <a routerLink="/mes-demandes" class="text-link self-start text-sm font-semibold"
-          >← Mes demandes</a
+        <a
+          routerLink="/mes-demandes"
+          [queryParams]="retour()"
+          class="text-link self-start text-sm font-semibold"
+          >← {{ filtre() ? filtres[filtre()!].libelle : 'Mes demandes' }}</a
         >
         <section class="rounded-2xl border border-gray-200 bg-white p-6">
           <div class="flex flex-wrap items-center gap-2">

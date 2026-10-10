@@ -13,12 +13,16 @@ import { ACCUEIL_ROLE } from '../../../core/auth/accueil-role';
 import { Role } from '../../../core/auth/auth.models';
 import { AuthService } from '../../../core/auth/auth.service';
 import { CompteursService } from '../../../features/notifications/data-access/compteurs.service';
+import { MonCompteService } from '../../../core/auth/mon-compte.service';
+import { ClocheNotifications } from '../../components/cloche-notifications/cloche-notifications';
+import { FenetreBienvenue } from '../../components/fenetre-bienvenue/fenetre-bienvenue';
+import { salutation } from '../../utils/salutation';
 
 interface LienMenu {
   libelle: string;
   chemin: string;
   // Pour afficher le petit chiffre rouge à côté du lien
-  compteur?: 'messages' | 'notifications' | 'pros' | 'litiges';
+  compteur?: 'messages' | 'pros' | 'litiges';
 }
 
 // Le menu de chaque rôle (dans la barre de gauche)
@@ -29,7 +33,6 @@ const MENUS: Record<Role, LienMenu[]> = {
     { libelle: 'Mes demandes', chemin: '/mes-demandes' },
     { libelle: 'Mes favoris', chemin: '/favoris' },
     { libelle: 'Messages', chemin: '/messages', compteur: 'messages' },
-    { libelle: 'Notifications', chemin: '/notifications', compteur: 'notifications' },
     { libelle: 'Mon compte', chemin: '/espace' },
   ],
   PROFESSIONNEL: [
@@ -38,7 +41,6 @@ const MENUS: Record<Role, LienMenu[]> = {
     { libelle: 'Mes services', chemin: '/mes-services' },
     { libelle: 'Mon profil', chemin: '/mon-profil' },
     { libelle: 'Messages', chemin: '/messages', compteur: 'messages' },
-    { libelle: 'Notifications', chemin: '/notifications', compteur: 'notifications' },
     { libelle: 'Mon compte', chemin: '/espace' },
   ],
   ADMINISTRATEUR: [
@@ -59,11 +61,13 @@ const ESPACES: Record<Role, string> = {
 };
 
 // La mise en page de tous les écrans « connecté » :
-// une barre de menu à gauche (selon le rôle) et le contenu à droite.
-// Sur téléphone, la barre est cachée : le bouton « Menu » la fait glisser.
+// une barre de menu à gauche (selon le rôle), une barre en haut
+// (« Bonsoir bineta », la cloche des notifications, le rond avec l'initiale)
+// et le contenu en dessous.
+// Sur téléphone, le menu de gauche est caché : le bouton ☰ le fait glisser.
 @Component({
   selector: 'app-app-layout',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, FenetreBienvenue, ClocheNotifications],
   templateUrl: './app-layout.html',
 })
 export class AppLayout {
@@ -79,6 +83,19 @@ export class AppLayout {
     fragment: 'ignored',
     matrixParams: 'ignored',
   };
+
+  // « Bonjour » le jour, « Bonsoir » à partir de 18 h
+  readonly salutation = salutation();
+
+  // Le prénom : celui de la connexion, sinon on le demande au backend
+  readonly prenom = signal(this.auth.session()?.prenom ?? '');
+  readonly initiale = computed(() => (this.prenom().charAt(0) || '?').toUpperCase());
+
+  // La cloche : seulement pour le client et le professionnel
+  readonly avecCloche = computed(() => {
+    const role = this.auth.session()?.role;
+    return role === 'CLIENT' || role === 'PROFESSIONNEL';
+  });
 
   // Sur téléphone : la barre de menu est-elle ouverte ?
   readonly menuOuvert = signal(false);
@@ -101,6 +118,9 @@ export class AppLayout {
   });
 
   constructor() {
+    inject(MonCompteService)
+      .consulter()
+      .subscribe({ next: (compte) => this.prenom.set(compte.prenom) });
     const changementsDePage = this.router.events.pipe(filter((e) => e instanceof NavigationEnd));
     // Les compteurs sont mis à jour : tout de suite, à chaque changement de page,
     // et toutes les 30 secondes
@@ -113,7 +133,6 @@ export class AppLayout {
 
   nombre(lien: LienMenu) {
     if (lien.compteur === 'messages') return this.compteurs.messagesNonLus();
-    if (lien.compteur === 'notifications') return this.compteurs.notificationsNonLues();
     if (lien.compteur === 'pros') return this.compteurs.prosEnAttente();
     if (lien.compteur === 'litiges') return this.compteurs.litigesOuverts();
     return 0;

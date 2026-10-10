@@ -57,7 +57,8 @@ export class Register {
     {
       prenom: ['', [Validators.required, Validators.maxLength(100)]],
       nom: ['', [Validators.required, Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+      // Facultatif : beaucoup d'utilisateurs n'ont pas d'email (on se connecte avec le téléphone)
+      email: ['', [Validators.email, Validators.maxLength(150)]],
       telephone: ['', [Validators.required, Validators.pattern(/^(\+221)?(7[05678]|33)\d{7}$/)]],
       motDePasse: [
         '',
@@ -148,7 +149,7 @@ export class Register {
       prenom: v.prenom.trim(),
       nom: v.nom.trim(),
       telephone: v.telephone.trim(),
-      email: v.email.trim(),
+      email: v.email.trim() || null,
       motDePasse: v.motDePasse,
       cguAcceptees: v.cguAcceptees,
     };

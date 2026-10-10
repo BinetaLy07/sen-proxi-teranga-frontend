@@ -120,17 +120,19 @@
       />
       @if (invalid('telephone')) {
         <p class="field-error">Saisissez un numéro sénégalais valide, avec ou sans +221.</p>
+      } @else {
+        <p class="mt-1 text-xs text-gray-500">Il servira à vous connecter.</p>
       }
     </div>
 
     <div>
-      <label for="email">Email <span class="required">*</span></label
+      <label for="email">Email <span class="font-normal text-gray-500">(facultatif)</span></label
       ><input
         id="email"
         type="email"
         autocomplete="email"
         formControlName="email"
-        placeholder="vous@exemple.com"
+        placeholder="exemple@gmail.com — vous pouvez laisser vide"
         [attr.aria-invalid]="invalid('email')"
       />
       @if (invalid('email')) {

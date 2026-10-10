@@ -1,0 +1,137 @@
+/* Le fond s'assombrit doucement */
+.voile {
+  animation: voile 0.35s ease-out both;
+}
+@keyframes voile {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* La carte « saute » avec un petit rebond */
+.carte {
+  animation: pop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) 0.1s both;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Le rond vert : une onde qui s'élargit */
+.rond-succes {
+  animation: onde 1.2s ease-out 0.7s both;
+}
+@keyframes onde {
+  from {
+    box-shadow: 0 0 0 0 rgb(34 197 94 / 0.55);
+  }
+  to {
+    box-shadow: 0 0 0 26px rgb(34 197 94 / 0);
+  }
+}
+
+/* Le cercle puis la coche se dessinent */
+.cercle,
+.coche {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cercle {
+  stroke: #22c55e;
+  stroke-width: 4;
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: trace 0.6s ease-out 0.4s forwards;
+}
+.coche {
+  stroke: #16a34a;
+  stroke-width: 5;
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: trace 0.4s ease-out 0.9s forwards;
+}
+@keyframes trace {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Les textes apparaissent l'un après l'autre */
+.apparait {
+  animation: monte 0.5s ease-out both;
+}
+.a1 {
+  animation-delay: 1s;
+}
+.a2 {
+  animation-delay: 1.15s;
+}
+.a3 {
+  animation-delay: 1.3s;
+}
+.a4 {
+  animation-delay: 1.45s;
+}
+@keyframes monte {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Les confettis qui tombent en tournant */
+.confetti {
+  position: fixed;
+  top: -20px;
+  z-index: 60;
+  width: 9px;
+  height: 15px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation-name: tombe;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.confetti.rond {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+@keyframes tombe {
+  from {
+    transform: translateY(0) rotate(0deg);
+  }
+  to {
+    transform: translateY(110vh) rotate(720deg);
+  }
+}
+
+/* Pour les personnes qui ont demandé moins d'animations dans leur téléphone ou ordinateur */
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+  .voile,
+  .carte,
+  .rond-succes,
+  .cercle,
+  .coche,
+  .apparait {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

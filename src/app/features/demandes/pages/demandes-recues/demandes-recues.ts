@@ -22,6 +22,7 @@ import {
   STATUTS_ANNULABLES,
 } from '../../data-access/demande-statuts';
 import { BoutonDiscussion } from '../../components/bouton-discussion/bouton-discussion';
+import { salutation } from '../../../../shared/utils/salutation';
 
 type Filtre = 'toutes' | 'nouvelles' | 'en-cours' | 'terminees' | 'autres';
 
@@ -53,6 +54,8 @@ const TERMINEES: StatutDemande[] = ['CONFIRMEE', 'CLOTUREE'];
   templateUrl: './demandes-recues.html',
 })
 export class DemandesRecues {
+  // « Bonjour » le jour, « Bonsoir » à partir de 18 h
+  readonly salutation = salutation();
   private readonly demandeApi = inject(DemandeApiService);
   private readonly paiementApi = inject(PaiementApiService);
   private readonly professionnelApi = inject(ProfessionnelApiService);

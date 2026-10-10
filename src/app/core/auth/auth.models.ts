@@ -7,6 +7,10 @@ export interface Tokens {
   refreshExpiresAt: string;
   utilisateurId: number;
   role: Role;
+  prenom?: string;
+  nom?: string;
+  // true : 1re connexion juste après l'inscription (fenêtre de bienvenue avec confettis)
+  premiereConnexion?: boolean;
 }
 export interface RegisterRequest {
   prenom: string;
