@@ -8,6 +8,8 @@ Exécuter `npm ci`, puis `npm start` et ouvrir http://localhost:4200. Le proxy `
 
 ## Architecture
 
+Le [guide CI/CD](docs/CI-CD.md) décrit le pipeline sur `main`, les secrets GitHub et les prérequis de déploiement Docker.
+
 - `core/auth` : modèles, session, interceptor Bearer, refresh partagé entre requêtes concurrentes et garde de route.
 - `core/http` : messages d’erreur API.
 - `core/pwa` : installation, mises à jour, état hors ligne.

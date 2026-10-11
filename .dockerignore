@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!deploy/
+!deploy/nginx.conf
+!dist/
+!dist/sen-proxi-teranga-frontend/
+!dist/sen-proxi-teranga-frontend/browser/
+!dist/sen-proxi-teranga-frontend/browser/**
