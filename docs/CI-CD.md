@@ -41,4 +41,4 @@ Références : [setup-node](https://github.com/actions/setup-node), [checkout](h
 
 ## Traefik sur le VPS actuel
 
-Le fichier serveur `/opt/sen-proxi-teranga/frontend.env` contient `PUBLIC_HOST=senproxi.82-29-172-15.sslip.io` et `TRAEFIK_NETWORK=azure-devops-migration_gitlab-net`. Le script ajoute les labels et connecte le frontend au reseau de Traefik. Le resolver de certificats existant se nomme `letsencrypt`. Cette configuration remplace la necessite d’installer un autre reverse proxy. Le fichier `deploy/frontend.env.example` sert de modele pour changer le domaine.
+Le fichier serveur `/opt/sen-proxi-teranga/frontend.env` contient `PUBLIC_HOST=senproxi.duckdns.org` et `TRAEFIK_NETWORK=azure-devops-migration_gitlab-net`. Le script ajoute les labels et connecte le frontend au reseau de Traefik. Le resolver de certificats existant se nomme `letsencrypt`. Cette configuration remplace la necessite d’installer un autre reverse proxy. Le fichier `deploy/frontend.env.example` sert de modele pour changer le domaine.

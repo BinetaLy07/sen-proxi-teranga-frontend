@@ -56,6 +56,8 @@ docker run --detach --name "$name" --restart unless-stopped \
     --log-opt max-size=10m --log-opt max-file=3 "$image" || rollback
 if [[ -n "$proxy_network" ]]; then
     docker network connect "$proxy_network" "$name" || rollback
+    # Refresh Traefik discovery after both container networks are attached.
+    docker restart "$name" >/dev/null || rollback
 fi
 ready=false
 for attempt in $(seq 1 30); do
