@@ -1,5 +1,6 @@
 /* Auth layout and design tokens adapted from TailAdmin Angular (MIT). */
 @import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
 @theme {
   --color-brand-500: #465fff;
   --color-brand-600: #3641f5;

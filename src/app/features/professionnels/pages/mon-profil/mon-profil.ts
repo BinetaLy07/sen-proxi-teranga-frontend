@@ -8,6 +8,7 @@ import { apiError } from '../../../../core/http/api-error';
 import { ImageProtegee } from '../../../../shared/components/image-protegee/image-protegee';
 import { ProfilProfessionnel } from '../../data-access/professionnel.models';
 import { ProfessionnelApiService } from '../../data-access/professionnel-api.service';
+import { PositionProfessionnel } from './position-professionnel';
 
 const FORMATS_IMAGE = ['image/jpeg', 'image/png'];
 const MAX_REALISATIONS = 10;
@@ -15,7 +16,7 @@ const MAX_REALISATIONS = 10;
 // « Mon profil » du professionnel : le statut de vérification, les informations
 // (description, compétences, expérience, WhatsApp, alerte SMS), la photo et les réalisations.
 @Component({
-  imports: [DatePipe, ReactiveFormsModule, ImageProtegee],
+  imports: [DatePipe, ReactiveFormsModule, ImageProtegee, PositionProfessionnel],
   templateUrl: './mon-profil.html',
 })
 export class MonProfil {

@@ -16,13 +16,14 @@ import { Zone } from '../../../zones/data-access/zone.models';
 import { ZoneApiService } from '../../../zones/data-access/zone-api.service';
 import { ProfessionnelResume } from '../../data-access/professionnel.models';
 import { ProfessionnelApiService } from '../../data-access/professionnel-api.service';
+import { RechercheProximite } from './recherche-proximite';
 
 // « Trouver un pro » : deux écrans, choisis par l'adresse (le bouton « retour » marche) :
 // 1. /recherche : les services rangés par famille, et « Voir tous les professionnels » ;
 // 2. /recherche?categorieId=6 (ou ?tous=1, ?metier=…, ?zoneId=…) : la liste des pros.
 // Le backend ne renvoie que des professionnels VALIDÉS et non suspendus.
 @Component({
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, RechercheProximite],
   templateUrl: './recherche.html',
 })
 export class Recherche {
@@ -42,7 +43,7 @@ export class Recherche {
 
   // Ce que dit l'adresse
   readonly modeListe = signal(false); // false : écran 1 (services) ; true : écran 2 (liste)
-  private readonly categorieId = signal<number | null>(null);
+  readonly categorieId = signal<number | null>(null);
   // La liste d'un service (?categorieId=…) : elle est déjà triée, pas de barre de recherche
   readonly listeDUnService = computed(() => this.categorieId() !== null);
   readonly metierCherche = signal('');

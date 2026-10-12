@@ -2,6 +2,12 @@
      - /recherche                   -> les services rangés par famille (et « Voir tous les professionnels ») ;
      - /recherche?categorieId=6     -> la liste des pros de ce service (aussi ?tous=1, ?metier=…, ?zoneId=…). -->
 
+<app-recherche-proximite
+  [metier]="form.controls.metier.value"
+  [zoneId]="form.controls.zoneId.value"
+  [categorieId]="categorieId()"
+/>
+
 @if (!modeListe()) {
   <!-- ===== Écran 1 : les services ===== -->
   <p class="eyebrow">TROUVER UN PRO · {{ wolof.trouverUnPro }}</p>
