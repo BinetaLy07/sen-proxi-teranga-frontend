@@ -53,7 +53,9 @@ export class Carte implements OnDestroy {
 
   private async initialiser() {
     try {
-      const l = await import('leaflet');
+      const module = await import('leaflet');
+      // Leaflet 1.x est CommonJS : le build de production expose l'API dans default.
+      const l = module.default ?? module;
       if (this.destroyed) return;
       this.leaflet = l;
       this.map = l
